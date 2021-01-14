@@ -35,6 +35,9 @@ class Worker(Freezable):
         'was a timeout reached?'
 
         return time.perf_counter() - self.priv.start_time > Settings.TIMEOUT
+    
+    def check_is_finished(self):
+        return self.priv.ss.is_finished(self.shared.network)
         
     def main_loop(self):
         'main worker loop'
@@ -43,7 +46,7 @@ class Worker(Freezable):
 
         while not should_exit:
             # check if finished
-            if self.priv.ss and self.priv.ss.is_finished(self.shared.network):
+            if self.priv.ss and self.check_is_finished():
                 self.finished_star() # this sets self.priv.ss to None
 
                 if self.priv.work_list and Settings.BRANCH_MODE in [Settings.BRANCH_EGO, Settings.BRANCH_EGO_LIGHT]:
@@ -888,7 +891,7 @@ class Worker(Freezable):
         network = self.shared.network
         spec = self.shared.spec
 
-        if not ss.is_finished(network):
+        if not self.check_is_finished():
             new_star = ss.do_first_relu_split(network, spec, self.priv.start_time)
 
             ss.propagate_up_to_split(network, self.priv.start_time)

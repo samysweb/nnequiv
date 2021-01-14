@@ -20,15 +20,16 @@ class LpStar(Freezable):
     constraints on initial variables (using csr / rhs)
     '''
 
-    def __init__(self, a_mat, bias, box_bounds=None):
+    def __init__(self, a_mat, bias, box_bounds=None, lpi=None):
         assert a_mat is None or isinstance(a_mat, np.ndarray)
         assert bias is None or isinstance(bias, np.ndarray)
+        assert lpi is None or isinstance(lpi, LpInstance)
         
         self.a_mat = a_mat
         self.bias = bias
 
         # initialize lpi with no constraints
-        self.lpi = None
+        self.lpi = lpi
 
         # for finding concrete counterexamples
         self.init_bm = None
@@ -52,7 +53,8 @@ class LpStar(Freezable):
                 for _ in range(len(box_bounds)):
                     self.input_bounds_witnesses.append([min_pt, max_pt])
             
-            self.lpi = LpInstance()
+            if self.lpi is None:
+                self.lpi = LpInstance()
 
             for i, (lb, ub) in enumerate(box_bounds):
                 self.lpi.add_double_bounded_cols([f"i{i}"], lb, ub)

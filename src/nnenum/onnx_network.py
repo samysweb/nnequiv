@@ -254,7 +254,6 @@ def load_onnx_network_optimized(filename):
     assert len(graph.output) == 1, "onnx network defined multiple outputs"
     network_output = graph.output[0].name
 
-    #print(f"input: '{network_input}', output: '{network_output}'")
     
     #assert network_input == graph.input[0].name, \
     #    f"network_input ({network_input}) != graph.input[0].name ({graph.input[0].name})"
