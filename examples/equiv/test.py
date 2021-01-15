@@ -30,6 +30,8 @@ def main():
     Settings.NUM_LP_PROCESSES = 1 # if > 1, then force multiprocessing during lp step
     Settings.PARALLEL_ROOT_LP = True # near the root of the search, use parallel lp, override NUM_LP_PROCESES if true
     Settings.EAGER_BOUNDS = True
+    Settings.CONTRACT_LP_TRACK_WITNESSES = False
+    # Settings.GLPK_RESET_BEFORE_MINIMIZE = True # Necessary for trustworthy solutions?
 
     net1File = sys.argv[1]
     net2File = sys.argv[2]

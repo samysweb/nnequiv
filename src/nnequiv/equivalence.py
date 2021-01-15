@@ -50,8 +50,6 @@ def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input 
     Timers.reset()
     if not Settings.TIMING_STATS:
         Timers.disable()
-
-    Timers.tic('enumerate_network')
     start_time = time.perf_counter()
 
     assert network1.get_input_shape() == network2.get_input_shape(), "Networks must have same input shape"
@@ -87,6 +85,7 @@ def worker_func(worker_index, shared):
     priv.start_time = shared.start_time
     w = EquivWorker(shared, priv)
     w.main_loop()
+    Timers.toc(timer_name)
 
 
 class EquivSharedState(SharedState):

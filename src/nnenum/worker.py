@@ -11,6 +11,7 @@ import time
 
 import numpy as np
 
+from nnenum.lpinstance import UnsatError
 from nnenum.timerutil import Timers
 from nnenum.overapprox import do_overapprox_rounds, make_prerelu_sims, OverapproxCanceledException
 from nnenum.settings import Settings
@@ -28,6 +29,7 @@ class Worker(Freezable):
 
         self.shared = shared
         self.priv = priv
+        self.dot_counter = 0
 
         self.freeze_attrs()
 
@@ -69,7 +71,15 @@ class Worker(Freezable):
 
                 if self.priv.ss and not self.has_timeout():
                     start_time = time.perf_counter()
-                    self.advance_star()
+                    Timers.tic("advance_star_outer")
+                    try:
+                        self.advance_star()
+                    except UnsatError:
+                        # TODO(steuber): This is a highly controversial idea of mine and might turn out to be incorrect!
+                        print("Omitting star set due to UNSAT")
+                        self.priv.ss = None
+                    finally:
+                        Timers.tocExcept("advance_star_outer")
                     diff = time.perf_counter() - start_time
                     self.add_branch_str(f"advance_star {round(diff * 1000, 3)} ms")
 
@@ -108,6 +118,7 @@ class Worker(Freezable):
             should_exit = self.update_shared_variables()
             self.print_progress()
 
+        self.print_progress(force=True)
         Timers.tic('post_loop')
         self.update_final_stats()
         self.clear_remaining_work()
@@ -496,8 +507,11 @@ class Worker(Freezable):
         ##############################
         self.priv.shared_update_urgent = True
 
-    def print_progress(self):
+    def print_progress(self, force=False):
         'periodically print progress (worker 0 only)'
+        if self.dot_counter%100 == 0:
+            print(".",end="")
+        self.dot_counter += 1
 
         if self.priv.worker_index == 0:
             now = time.perf_counter()
@@ -510,8 +524,8 @@ class Worker(Freezable):
             if cur_time >= Settings.TIMEOUT:
                 self.timeout()
 
-            if Settings.PRINT_OUTPUT and Settings.PRINT_PROGRESS and \
-               now - self.priv.last_print_time > Settings.PRINT_INTERVAL:
+            if force or (Settings.PRINT_OUTPUT and Settings.PRINT_PROGRESS and \
+               now - self.priv.last_print_time > Settings.PRINT_INTERVAL):
                 Timers.tic("print_progress")
                 
                 # print stats
@@ -559,8 +573,8 @@ class Worker(Freezable):
                 # don't divide by 0
                 expected_stars = round(1 if finished_frac < 1e-9 else finished / finished_frac)
 
-                print(f"({time_str}) Q: {qsize}, Sets: {finished}/{total_stars} " + \
-                      f" ({round(finished_frac * 100, 3)}%) ETA: {eta} (expected {expected_stars} stars)   ", end="\r")
+                print(f"\n({time_str}) Q: {qsize}, Sets: {finished}/{total_stars} " + \
+                      f" ({round(finished_frac * 100, 3)}%) ETA: {eta} (expected {expected_stars} stars)   ", end="\n")
 
                 log_prints = math.log(self.priv.num_prints, 2)
                 

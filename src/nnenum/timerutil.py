@@ -138,6 +138,19 @@ class Timers():
             Timers.stack.append(td)
 
     @staticmethod
+    def tocExcept(name):
+        if Timers.enabled:
+            while len(Timers.stack) > 0:
+                cur = Timers.stack.pop()
+                cur.toc()
+                if cur.name == name:
+                    break
+            assert cur.name == name, f"Did not find timer {name}"
+        else:
+            assert not Timers.stack, "Timers.enabled was False but Timers.stack non-empty: " + \
+                                     f"{[t.name for t in Timers.stack]}"
+
+    @staticmethod
     def toc(name):
         'stop a timer'
 

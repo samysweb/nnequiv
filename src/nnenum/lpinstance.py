@@ -63,15 +63,19 @@ class LpInstance(Freezable):
         'initialize the lp instance'
 
         self.lp = glpk.glp_create_prob() # pylint: disable=invalid-name
+
+
         
         if other_lpi is None:
             # internal bookkeeping
             self.names = [] # column names
+            self.rows = []
 
             # setup lp params
         else:
             # initialize from other lpi
             self.names = other_lpi.names.copy()
+            self.rows = other_lpi.rows.copy()
                 
             Timers.tic('glp_copy_prob')
             glpk.glp_copy_prob(self.lp, other_lpi.lp, glpk.GLP_OFF)
@@ -470,6 +474,33 @@ class LpInstance(Freezable):
                     assert lb < ub
                     glpk.glp_set_col_bnds(self.lp, num_cols + i + 1, glpk.GLP_DB, lb, ub)  # double-bounded variable
 
+    def too_close_to_hyperplanes(self, vec, rhs, up_to_n, normalize=True, tol=1e-4):
+        Timers.tic('too_close_to_hyperplanes')
+        assert isinstance(vec, np.ndarray)
+        assert len(vec.shape) == 1 or vec.shape[0] == 1
+        # TODO(steuber): Make this more efficient: kd Tree maybe?
+        # TODO(steuber): Is this the right cirterion?
+        if normalize:
+            norm = np.linalg.norm(vec)
+            assert norm > 0
+
+            vec = vec / norm
+            rhs = rhs / norm
+
+        def diff(v1, v2):
+            diff1 = np.linalg.norm(v1 - v2)
+            diff2 = np.linalg.norm(v1 + v2)
+            return min(diff1, diff2)
+        rv = False
+        for mat_vec, mat_rhs in self.rows:
+            if diff(mat_vec[:up_to_n], vec[:up_to_n]) < tol and diff(mat_rhs, rhs) < tol:
+                rv = True
+                break
+        Timers.toc('too_close_to_hyperplanes')
+        return rv
+
+
+
     def add_dense_row(self, vec, rhs, normalize=True):
         '''
         add a row from a dense nd.array, row <= rhs
@@ -480,13 +511,14 @@ class LpInstance(Freezable):
         assert isinstance(vec, np.ndarray)
         assert len(vec.shape) == 1 or vec.shape[0] == 1
         assert len(vec) == self.get_num_cols(), f"vec had {len(vec)} values, but lpi has {self.get_num_cols()} cols"
-
         if normalize:
             norm = np.linalg.norm(vec)
             assert norm > 0
 
             vec = vec / norm
             rhs = rhs / norm
+
+        self.rows.append((vec, rhs))
 
         rows_before = self.get_num_rows()
 
@@ -626,8 +658,10 @@ class LpInstance(Freezable):
     def set_minimize_direction(self, direction):
         '''set the optimization direction'''
 
-        assert len(direction) == self.get_num_cols(), f"expected {self.get_num_cols()} cols, but optimization " + \
-            f"vector had {len(direction)} variables"
+        # assert len(direction) == self.get_num_cols(), f"expected {self.get_num_cols()} cols, but optimization " + \
+        #    f"vector had {len(direction)} variables"
+        while len(direction) < self.get_num_cols():
+            np.append(direction,[0.0])
         
         for i, d in enumerate(direction):
             col = int(1 + i)

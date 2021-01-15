@@ -32,6 +32,7 @@ class EquivStarState(LpStarState):
             self.network_count = network_count
             self.initial_star=None
             self._fully_initialized=True
+            self.input_size = 0
             self.freeze_attrs()
         else:
             super(EquivStarState,self).__init__()
@@ -42,15 +43,18 @@ class EquivStarState(LpStarState):
             self.initial_star=None
             self.network_count=network_count
             self._fully_initialized=True
+            self.input_size = 0
             self.freeze_attrs()
     
     def freeze_attrs(self):
         if self._fully_initialized:
             self._frozen = True
     
-    def from_init_star(self, star):
+    def from_init_star(self, star, input_size=None):
         super(EquivStarState,self).from_init_star(star)
         self.initial_star = star.copy()
+        if input_size is None:
+            self.input_size = self.initial_star.a_mat.shape[1]
     
     def propagate_up_to_split(self, networks, start_time):
         assert len(networks) > 1 and len(networks)>self.cur_network
@@ -78,18 +82,36 @@ class EquivStarState(LpStarState):
 
     
     def split_enumerate(self, i, network, spec, start_time):
+        row = self.star.a_mat[i]
+        bias = self.star.bias[i]
+        if self.star.lpi.too_close_to_hyperplanes(row, bias,self.input_size,tol=1e-7):
+            num_outputs = self.star.a_mat.shape[0]
+            new_generatators = np.zeros((num_outputs,1), dtype=self.star.a_mat.dtype)
+            lb, ub = self.prefilter.output_bounds.layer_bounds[i]
+            self.star.split_overapprox(self.cur_layer, new_generatators, i, lb, ub)
+            self.star.a_mat[i, :] = 0
+            self.star.bias[i] = 0
+            self.star.a_mat = np.hstack([self.star.a_mat, new_generatators])
+            self.prefilter.zono.init_bounds.append([lb,ub])
+            assert self.star.a_mat.shape[1] == self.star.lpi.get_num_cols()
+            # print(f"Too close: {self.cur_network},{self.cur_layer},{i}")
+            self.prefilter.output_bounds.branching_neurons = self.prefilter.output_bounds.branching_neurons[1:]
+            return None
+
         rv = super(EquivStarState,self).split_enumerate(i, network, spec, start_time)
-        rv = EquivStarState(self.network_count,
-            from_star_state=rv
-        )
-        rv.initial_star=self.initial_star
-        rv.from_id = self.id
-        rv.cur_network = self.cur_network
-        
-        # TODO(steuber): Recheck this procedure
-        for x in range(0, self.cur_network):
-            rv.output_stars[x]=self.output_stars[x]
-        rv.star.check_input_box_bounds_slow()
+        if rv is not None:
+            rv = EquivStarState(self.network_count,
+                from_star_state=rv
+            )
+            rv.initial_star=self.initial_star
+            rv.from_id = self.id
+            rv.cur_network = self.cur_network
+            self.input_size = self.input_size
+
+            # TODO(steuber): Recheck this procedure
+            for x in range(0, self.cur_network):
+                rv.output_stars[x]=self.output_stars[x]
+            # rv.star.check_input_box_bounds_slow()
         return rv
     
     def do_first_relu_split(self, networks, spec, start_time):
@@ -99,24 +121,24 @@ class EquivStarState(LpStarState):
 
     def is_finished(self, networks):
         'is the current star finished?'
-        assert len(networks) > 1 
-
+        assert len(networks) > 1
 
         if self.cur_network<self.network_count and self.cur_layer >= len(networks[self.cur_network].layers):
-            self.cur_layer=0
             self.output_stars[self.network_count-1]=self.star
-            new_in_star = LpStar(
-               self.initial_star.a_mat,
-               self.initial_star.bias,
-               box_bounds=None,
-               lpi=LpInstance(self.star.lpi)
-            )
-            new_in_star.input_bounds_witnesses = copy.deepcopy(self.star.input_bounds_witnesses)
-            new_in_star.input_bounds_witnesses = self.star.input_bounds_witnesses
-            # new_in_star = self.initial_star.copy()
-            # new_in_star.lpi = LpInstance(self.star.lpi)
             self.cur_network += 1
-            self.from_init_star(new_in_star)
+            if self.cur_network < self.network_count:
+                self.cur_layer = 0
+                new_in_star = LpStar(
+                   self.initial_star.a_mat,
+                   self.initial_star.bias,
+                   box_bounds=None,
+                   lpi=LpInstance(self.star.lpi)
+                )
+                new_in_star.input_bounds_witnesses = copy.deepcopy(self.star.input_bounds_witnesses)
+                new_in_star.input_bounds_witnesses = self.star.input_bounds_witnesses
+                # new_in_star = self.initial_star.copy()
+                # new_in_star.lpi = LpInstance(self.star.lpi)
+                self.from_init_star(new_in_star, input_size=self.input_size)
 
         if self.network_count<=self.cur_network:
             return True

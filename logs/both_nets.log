@@ -1,0 +1,884 @@
+/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/venv/bin/python /home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/examples/equiv/test.py ReluDiff-ICSE2020-Artifact/DiffNN-Code/nnet/ACASXU_run2a_1_1_batch_2000.onnx ReluDiff-ICSE2020-Artifact/DiffNN-Code/compressed_nnets/ACASXU_run2a_1_1_batch_2000_16bit.onnx
+.
+(0.0 sec) Q: 0, Sets: 0/1  (0.0%) ETA: - (expected 1 stars)
+
+..................Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+....................Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+Warning: numerical instability (primal simplex, phase II)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Warning: numerical instability (primal simplex, phase II)
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Warning: numerical instability (primal simplex, phase II)
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+...........
+(15.0 sec) Q: 0, Sets: 2473/2480  (15.625%) ETA: 1.35 min (expected 15827 stars)
+
+......................................................
+(30.0 sec) Q: 0, Sets: 5142/5157  (25.448%) ETA: 1.47 min (expected 20206 stars)
+..........Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+...........................................
+(45.0 sec) Q: 0, Sets: 7818/7831  (28.974%) ETA: 1.84 min (expected 26983 stars)
+
+......................Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+................................
+(1.0 min) Q: 0, Sets: 10524/10536  (29.239%) ETA: 2.42 min (expected 35993 stars)
+......................................................
+(1.25 min) Q: 0, Sets: 13198/13208  (33.252%) ETA: 2.51 min (expected 39691 stars)
+........................................................
+(1.5 min) Q: 0, Sets: 16006/16012  (35.887%) ETA: 2.68 min (expected 44601 stars)
+............................................................
+(1.75 min) Q: 0, Sets: 19029/19041  (41.483%) ETA: 2.47 min (expected 45871 stars)
+
+............................................................
+(2.0 min) Q: 0, Sets: 22004/22014  (43.935%) ETA: 2.55 min (expected 50083 stars)
+.........................................................
+(2.25 min) Q: 0, Sets: 24881/24889  (46.313%) ETA: 2.61 min (expected 53724 stars)
+.............................................................
+(2.5 min) Q: 0, Sets: 27912/27926  (50.952%) ETA: 2.41 min (expected 54781 stars)
+...............................................................
+(2.75 min) Q: 0, Sets: 31047/31058  (56.922%) ETA: 2.08 min (expected 54543 stars)
+...............................Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+Warning: numerical instability (primal simplex, phase II)
+.............................
+(3.0 min) Q: 0, Sets: 34076/34087  (70.385%) ETA: 1.26 min (expected 48414 stars)
+............................................................
+(3.25 min) Q: 0, Sets: 37072/37084  (75.61%) ETA: 1.05 min (expected 49030 stars)
+.............................................................
+(3.5 min) Q: 0, Sets: 40108/40122  (80.103%) ETA: 52.2 sec (expected 50071 stars)
+..................................Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+Warning: numerical instability (primal simplex, phase II)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Warning: numerical instability (primal simplex, phase II)
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Warning: numerical instability (primal simplex, phase II)
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Warning: numerical instability (primal simplex, phase II)
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Warning: numerical instability (primal simplex, phase II)
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+.........................
+(3.75 min) Q: 0, Sets: 42986/42997  (87.749%) ETA: 31.4 sec (expected 48987 stars)
+
+..Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+Using result after reset basis (soltion was now feasible)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Using result from no-direction optimization
+.........................................................
+(4.0 min) Q: 0, Sets: 45958/45969  (91.319%) ETA: 22.8 sec (expected 50327 stars)
+..............................................................
+(4.25 min) Q: 0, Sets: 49013/49027  (94.541%) ETA: 14.7 sec (expected 51843 stars)
+..........................................................
+(4.5 min) Q: 0, Sets: 51955/51965  (94.781%) ETA: 14.9 sec (expected 54816 stars)
+........................................
+(4.67 min) Q: 0, Sets: 53936/53936  (100.0%) ETA: 0.0 sec (expected 53936 stars)
+Worker_func Time (1 calls): 280.20 sec
+  Get_global_queue Time (2 calls): 0.00 sec (0.0%)
+  Update_shared_variables Time (5301 calls): 0.29 sec (0.1%)
+  Print_progress Time (20 calls): 0.00 sec (0.0%)
+  Advance_star_outer Time (54095 calls): 275.89 sec (98.5%)
+    Advance Time (54095 calls): 275.59 sec (99.9%)
+      Do_first_relu_split Time (54095 calls): 149.80 sec (54.4%)
+        Too_close_to_hyperplanes Time (54095 calls): 35.61 sec (23.8%)
+        Split_enumerate Time (53935 calls): 103.38 sec (69.0%)
+          Glp_copy_prob Time (53935 calls): 0.70 sec (0.7%)
+          Copy init bm bias Time (53935 calls): 0.12 sec (0.1%)
+          Check child feasible Time (53935 calls): 3.62 sec (3.5%)
+          Add_dense_row Time (53935 calls): 2.18 sec (2.1%)
+          Prefilter_split_relu Time (53935 calls): 93.70 sec (90.6%)
+            Contract_zonotope_lp Time (53935 calls): 79.17 sec (84.5%)
+              Contract_lp Time (107870 calls): 78.68 sec (99.4%)
+                Full input bounds Time (107870 calls): 69.80 sec (88.7%)
+                  Star.update_input_box_bounds_old Time (107870 calls): 68.91 sec (98.7%)
+                    Lpi.minimize Time (1081516 calls): 59.07 sec (85.7%)
+                    Other (Star.update_input_box_bounds_old): 9.84 sec (14.3%)
+                  Other (Full input bounds): 0.89 sec (1.3%)
+                Star.update_input_box_bounds_new Time (107870 calls): 6.39 sec (8.1%)
+                Other (Contract_lp): 2.50 sec (3.2%)
+              Other (Contract_zonotope_lp): 0.49 sec (0.6%)
+            Witness_lp Time (107870 calls): 6.02 sec (6.4%)
+            Recompute_bounds Time (18202 calls): 5.08 sec (5.4%)
+            Assign_zeros Time (18202 calls): 0.31 sec (0.3%)
+            Other (Prefilter_split_relu): 3.12 sec (3.3%)
+          Other (Split_enumerate): 3.05 sec (2.9%)
+        Split_overapprox Time (160 calls): 0.02 sec (0.0%)
+        Other (Do_first_relu_split): 10.79 sec (7.2%)
+      Starstate.apply_linear_layer Time (211205 calls): 61.57 sec (22.3%)
+      Recompute_bounds Time (153284 calls): 51.62 sec (18.7%)
+        Zono.box_bounds Time (153284 calls): 15.66 sec (30.3%)
+        Update_bounds_lp Time (153284 calls): 30.61 sec (59.3%)
+          Minimize_output Time (301264 calls): 21.92 sec (71.6%)
+          Other (Update_bounds_lp): 8.69 sec (28.4%)
+        Sort_splits Time (153284 calls): 0.33 sec (0.6%)
+        Other (Recompute_bounds): 5.01 sec (9.7%)
+      Assign_zeros Time (153284 calls): 2.33 sec (0.8%)
+      Glp_copy_prob Time (11955 calls): 0.11 sec (0.0%)
+      Copy init bm bias Time (7970 calls): 0.02 sec (0.0%)
+      Star.minimize_vec Time (3985 calls): 0.34 sec (0.1%)
+      Full input bounds Time (3985 calls): 2.10 sec (0.8%)
+      Other (Advance): 7.71 sec (2.8%)
+    Other (Advance_star_outer): 0.29 sec (0.1%)
+  Finished_star Time (53936 calls): 0.30 sec (0.1%)
+  Post_loop Time (1 calls): 0.00 sec (0.0%)
+  Other (Worker_func): 3.71 sec (1.3%)
+
+
+Process finished with exit code 0
