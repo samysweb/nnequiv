@@ -1,0 +1,84 @@
+/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/venv/bin/python /home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/examples/equiv/test.py ReluDiff-ICSE2020-Artifact/DiffNN-Code/nnet/ACASXU_run2a_1_1_batch_2000.onnx ReluDiff-ICSE2020-Artifact/DiffNN-Code/compressed_nnets/ACASXU_run2a_1_1_batch_2000_16bit.onnx
+glp_exact: problem has no rows/columns
+GLPK timed out / failed (5) after 0.0 sec with primary settings with 0 rows and 5 cols
+Retrying with reset
+glp_exact: problem has no rows/columns
+result with reset  (5) 0.0 sec
+Retrying with reset + alternate GLPK settings
+result with reset & alternate settings (0) 0.0 sec
+(0.1 sec) Q: 0, Sets: 0/1  (0.0%) ETA: - (expected 1 stars)
+(0.4 sec) Q: 0, Sets: 0/2  (0.0%) ETA: - (expected 1 stars)
+(0.6 sec) Q: 0, Sets: 0/9  (0.0%) ETA: - (expected 1 stars)
+(1.1 sec) Q: 0, Sets: 10/22  (1.587%) ETA: 1.1 min (expected 630 stars)
+(2.0 sec) Q: 0, Sets: 36/48  (1.63%) ETA: 2.05 min (expected 2209 stars)
+(3.9 sec) Q: 0, Sets: 76/87  (1.657%) ETA: 3.89 min (expected 4586 stars)
+(8.4 sec) Q: 0, Sets: 152/166  (1.796%) ETA: 7.65 min (expected 8465 stars)
+(16.9 sec) Q: 0, Sets: 288/299  (2.051%) ETA: 13.43 min (expected 14043 stars)
+(34.5 sec) Q: 0, Sets: 554/566  (2.24%) ETA: 25.09 min (expected 24728 stars)
+(1.15 min) Q: 0, Sets: 1106/1119  (5.283%) ETA: 20.69 min (expected 20937 stars)
+(2.3 min) Q: 0, Sets: 2284/2292  (12.182%) ETA: 16.56 min (expected 18749 stars)
+(4.6 min) Q: 0, Sets: 4586/4600  (25.314%) ETA: 13.57 min (expected 18116 stars)
+Note: minimize failed with fail_on_unsat was true, trying to reset basis...
+still unsat after reset basis, trying no-dir optimization
+Error: No-dir result was also infeasible!
+Lp has 5 columns (variables) and 16 rows (constraints)
+       *i0    *i1    *i2    *i3    *i4
+min 0.0000 0.0000 0.0000 0.0000 0.0000
+subject to:
+       BS     BS     BS     NU     BS
+ 1: BS -0.040 -0.982 -0.173 -0.017 0.0486  <= -0.069
+ 2: BS 0.0168 -0.659 0.5648 0.1982 -0.453  <= -0.009
+ 3: BS -0.020 0.9917 0.0683 -0.091 -0.053  <= 0.0864
+ 4: BS -0.255 0.0619 0.3275 -0.326 0.8469  <= -0.006
+ 5: NU -0.024 0.0255 0.9990 -0.019 0.0150  <= 0.0122
+ 6: BS 0.0426 -0.028 -0.998 -0.009 -0.013  <= -0.001
+ 7: BS 0.0142 -0.965 0.2137 -0.036 0.1431  <= -0.067
+ 8: BS -0.050 0.5246 -0.848 0.0344 -0.021  <= 0.0408
+ 9: BS 0.4200 0.5564 0.4337 -0.389 0.4171  <= 0.0234
+10: NU -0.670 0.5279 0.4990 -0.000 0.1525  <= 0.0461
+11: BS -0.124 0.3481 -0.794 -0.344 0.3362  <= -0.012
+12: BS 0.0582 0.3305 -0.902 0.1335 -0.232  <= 0.0332
+13: NU 0.0889 -0.882 -0.437 -0.081 0.1216  <= -0.089
+14: BS -0.017 0.4979 0.8645 0.0537 -0.037  <= 0.0596
+15: NU 0.3018 0.5653 -0.709 -0.231 0.1808  <= 0.0217
+16: BS 0.6698 -0.527 -0.499 0.0006 -0.152  <= -0.046
+(*) Bounded variables:
+i0 in [0.0, 0.1]
+i1 in [0.0, 0.1]
+i2 in [0.0, 0.1]
+i3 in [0.0, 0.1]
+i4 in [0.0, 0.1]
+Traceback (most recent call last):
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/examples/equiv/test.py", line 50, in <module>
+    main()
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/examples/equiv/test.py", line 43, in main
+    check_equivalence(network1, network2, input)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnequiv/equivalence.py", line 67, in check_equivalence
+    worker_func(0, shared)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnequiv/equivalence.py", line 89, in worker_func
+    w.main_loop()
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/worker.py", line 72, in main_loop
+    self.advance_star()
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnequiv/worker.py", line 37, in advance_star
+    new_star = ss.do_first_relu_split(network, spec, self.priv.start_time)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnequiv/lp_star_state.py", line 98, in do_first_relu_split
+    return super(EquivStarState,self).do_first_relu_split(networks[self.cur_network], spec, start_time)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/lp_star_state.py", line 307, in do_first_relu_split
+    rv = self.split_enumerate(index, network, spec, start_time)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnequiv/lp_star_state.py", line 81, in split_enumerate
+    rv = super(EquivStarState,self).split_enumerate(i, network, spec, start_time)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/lp_star_state.py", line 280, in split_enumerate
+    child.prefilter = self.prefilter.split_relu(i, pos.star, neg.star, self_gets_positive, start_time, depth)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/prefilter.py", line 316, in split_relu
+    pos.zono.contract_lp(pos_star, -row, bias)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/zonotope.py", line 123, in contract_lp
+    new_bounds_list = star.update_input_box_bounds(hyperplane_vec, rhs, count_lps=True)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/lp_star.py", line 275, in update_input_box_bounds
+    rv = self.update_input_box_bounds_new(cur_box, should_skip, count_lps)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/lp_star.py", line 308, in update_input_box_bounds_new
+    res = self.lpi.minimize(vec)
+  File "/home/steuber/Dokumente/Hortus/Univ/KIT/Semester-11/PdF/software/nnenum/src/nnenum/lpinstance.py", line 730, in minimize
+    raise UnsatError("minimize returned UNSAT and fail_on_unsat was True")
+nnenum.lpinstance.UnsatError: minimize returned UNSAT and fail_on_unsat was True
+
+Process finished with exit code 1

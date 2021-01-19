@@ -20,6 +20,12 @@ from nnenum.settings import Settings
 
 def get_lp_params(alternate_lp_params=False):
     'get the lp params object'
+    params = glpk.glp_smcp()
+    glpk.glp_init_smcp(params)
+
+    # params.msg_lev = glpk.GLP_MSG_ERR
+    params.msg_lev = glpk.GLP_MSG_ERR
+    return params
 
     if not hasattr(get_lp_params, 'obj'):
         params = glpk.glp_smcp()
@@ -664,7 +670,7 @@ class LpInstance(Freezable):
             self.reset_basis()
         
         start = time.perf_counter()
-        simplex_res = glpk.glp_simplex(self.lp, get_lp_params())
+        simplex_res = glpk.glp_exact(self.lp, get_lp_params())
 
         if simplex_res != 0: # solver failure (possibly timeout)
             r = self.get_num_rows()
@@ -677,7 +683,7 @@ class LpInstance(Freezable):
             print("Retrying with reset")
             self.reset_basis()
             start = time.perf_counter()
-            simplex_res = glpk.glp_simplex(self.lp, get_lp_params())
+            simplex_res = glpk.glp_exact(self.lp, get_lp_params())
             diff = time.perf_counter() - start
             print(f"result with reset  ({simplex_res}) {round(diff, 3)} sec")
 

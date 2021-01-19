@@ -79,6 +79,8 @@ class EquivStarState(LpStarState):
     
     def split_enumerate(self, i, network, spec, start_time):
         rv = super(EquivStarState,self).split_enumerate(i, network, spec, start_time)
+        if rv is None:
+            return None
         rv = EquivStarState(self.network_count,
             from_star_state=rv
         )
@@ -89,7 +91,7 @@ class EquivStarState(LpStarState):
         # TODO(steuber): Recheck this procedure
         for x in range(0, self.cur_network):
             rv.output_stars[x]=self.output_stars[x]
-        rv.star.check_input_box_bounds_slow()
+        # rv.star.check_input_box_bounds_slow()
         return rv
     
     def do_first_relu_split(self, networks, spec, start_time):
