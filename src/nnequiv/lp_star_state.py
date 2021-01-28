@@ -106,7 +106,7 @@ class EquivStarState(LpStarState):
 
         if self.cur_network<self.network_count and self.cur_layer >= len(networks[self.cur_network].layers):
             self.cur_layer=0
-            self.output_stars[self.network_count-1]=self.star
+            self.output_stars[self.cur_network]=self.star
             new_in_star = LpStar(
                self.initial_star.a_mat,
                self.initial_star.bias,
@@ -124,6 +124,8 @@ class EquivStarState(LpStarState):
             return True
         else:
             return False
-        
+
+    def check_equiv(self,equiv):
+        equiv.check(self.output_stars)
 
     

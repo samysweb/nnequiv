@@ -45,13 +45,13 @@ def make_init_ss(init, network1, network2, start_time):
     return ss
 
 
-def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input : LpStar):
+def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input : LpStar, equiv):
 
     Timers.reset()
     if not Settings.TIMING_STATS:
         Timers.disable()
 
-    Timers.tic('enumerate_network')
+    Timers.tic('network_equivalence')
     start_time = time.perf_counter()
 
     assert network1.get_input_shape() == network2.get_input_shape(), "Networks must have same input shape"
@@ -64,9 +64,10 @@ def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input 
     shared = EquivSharedState(network1, network2, None, 1, start_time)
     shared.push_init(init_star_state)
 
-    worker_func(0, shared)
+    worker_func(0, shared, equiv)
+    Timers.toc('network_equivalence')
 
-def worker_func(worker_index, shared):
+def worker_func(worker_index, shared, equiv):
     'worker function during verification'
 
     np.seterr(all='raise') # raise exceptions on floating-point errors instead of printing warnings
@@ -85,8 +86,9 @@ def worker_func(worker_index, shared):
 
     priv = PrivateState(worker_index)
     priv.start_time = shared.start_time
-    w = EquivWorker(shared, priv)
+    w = EquivWorker(shared, priv, equiv)
     w.main_loop()
+    Timers.toc(timer_name)
 
 
 class EquivSharedState(SharedState):

@@ -5,8 +5,11 @@ from nnenum.timerutil import Timers
 from nnenum.worker import Worker
 
 class EquivWorker(Worker):
-    def __init__(self, shared, priv):
+    def __init__(self, shared, priv, equiv):
         super(EquivWorker,self).__init__(shared,priv)
+        self._frozen = False
+        self.equiv = equiv
+        self._frozen = True
     
     def check_is_finished(self):
         network1 = self.shared.network1
@@ -53,6 +56,7 @@ class EquivWorker(Worker):
 
         cur_star_set = self.priv.ss
         # print("Finished star set: {}",str(cur_star_set.output_stars))
+        cur_star_set.check_equiv(self.equiv)
 
         self.priv.num_lps_enum += cur_star_set.star.num_lps
         self.priv.finished_stars += 1

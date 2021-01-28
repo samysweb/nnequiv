@@ -127,7 +127,9 @@ class OutputBounds(Freezable):
 
             self.branching_neurons = update_bounds_lp(self.layer_bounds, star, self.prefilter.simulation[1],
                                                       self.branching_neurons, depth,
-                                                      check_cancel_func=check_cancel_func)
+                                                      check_cancel_func=check_cancel_func,
+                                                      both_bounds=True)
+            # TODO(steuber): This fails if not both bounds are used due to some obscure simulation failure (floating point error?)
 
         self.branching_neurons = sort_splits(self.layer_bounds, self.branching_neurons)
 
