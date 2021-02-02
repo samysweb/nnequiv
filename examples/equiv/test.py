@@ -22,7 +22,8 @@ def generateBox(inputShape, index):
 	assert len(inputShape) == 1, "Multidimensional inputs are not yet supported"
 	generator = np.identity(inputShape[0], dtype=np.float32)
 	bias = np.zeros(inputShape[0], dtype=np.float32)
-	# bounds = [(0,0.2),(0.085, 0.089),(0.01, 0.015),(0.09, 0.1),(0,0.006)]
+	#bounds = [(0,0.1)]*5
+	#[(0,0.2),(0.085, 0.089),(0.01, 0.015),(0.09, 0.1),(0,0.006)]
 	bounds = []
 	# for i in range(inputShape[0]):
 	#	bounds.append((low, high))
@@ -46,7 +47,7 @@ def main():
 
 	network1, network2 = load_networks(net1File, net2File)
 
-	input = generateBox(network1.get_input_shape(),"12")
+	input = generateBox(network1.get_input_shape(),"1010")
 
 	check_equivalence(network1, network2, input, EpsilonEquivalence(0.05, networks=[network1,network2]))
 	print("")
