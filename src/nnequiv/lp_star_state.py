@@ -9,13 +9,18 @@ from nnenum.lpinstance import LpInstance
 
 StarSetId = 1
 
+SplitsPerNet = [0, 0]
+TotalStarCount = [0]
+
 class EquivStarState(LpStarState):
     def __init__(self, network_count, from_star_state=None):
         global StarSetId
+        global TotalStarCount
         self._fully_initialized=False
         self.id = StarSetId
         self.from_id=0
         StarSetId+=1
+        TotalStarCount[0]+=1
         if from_star_state is not None:
             self.star = from_star_state.star
             self.prefilter = copy.deepcopy(from_star_state.prefilter)
@@ -78,6 +83,7 @@ class EquivStarState(LpStarState):
 
     
     def split_enumerate(self, i, network, spec, start_time):
+        global SplitsPerNet
         rv = super(EquivStarState,self).split_enumerate(i, network, spec, start_time)
         if rv is None:
             return None
@@ -92,6 +98,7 @@ class EquivStarState(LpStarState):
         for x in range(0, self.cur_network):
             rv.output_stars[x]=self.output_stars[x]
         # rv.star.check_input_box_bounds_slow()
+        SplitsPerNet[self.cur_network] += 1
         return rv
     
     def do_first_relu_split(self, networks, spec, start_time):

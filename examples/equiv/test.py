@@ -8,6 +8,7 @@ from nnenum.settings import Settings
 from nnequiv.equivalence import check_equivalence
 from nnequiv.equivalence_properties import EpsilonEquivalence
 from nnenum.timerutil import Timers
+from nnequiv.lp_star_state import SplitsPerNet, TotalStarCount
 
 from properties import PROPERTY
 
@@ -52,6 +53,11 @@ def main():
 	check_equivalence(network1, network2, input, EpsilonEquivalence(0.05, networks=[network1,network2]))
 	print("")
 	Timers.print_stats()
+	print("")
+	print(f"Total star count: {TotalStarCount}")
+	for i, splitNum in enumerate(SplitsPerNet):
+		print(f"Network {i}: {splitNum}")
+
 
 
 if __name__ == "__main__":
