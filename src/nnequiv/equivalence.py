@@ -1,6 +1,7 @@
 
 import numpy as np
 import time
+import multiprocessing
 
 
 from nnenum.timerutil import Timers
@@ -9,6 +10,7 @@ from nnenum.network import NeuralNetwork
 from nnenum.lp_star import LpStar
 from nnenum.enumerate import make_init_ss, SharedState, PrivateState
 from nnenum.prefilter import LpCanceledException
+from nnenum.onnx_network import reinit_onnx_sessions
 
 from nnequiv.worker import EquivWorker
 from nnequiv.lp_star_state import EquivStarState
@@ -61,10 +63,30 @@ def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input 
 
     init_star_state = make_init_ss(input, network1 ,network2, start_time)
 
-    shared = EquivSharedState(network1, network2, None, 1, start_time)
+    num_workers = 1 if Settings.NUM_PROCESSES < 1 else Settings.NUM_PROCESSES
+
+    shared = EquivSharedState(network1, network2, None, num_workers, start_time)
     shared.push_init(init_star_state)
 
-    worker_func(0, shared, equiv)
+    if num_workers == 1:
+        if Settings.PRINT_OUTPUT:
+            print("Running single-threaded")
+
+        worker_func(0, shared, equiv)
+    else:
+        processes = []
+
+        if Settings.PRINT_OUTPUT:
+            print(f"Running in parallel with {num_workers} processes")
+
+        for index in range(Settings.NUM_PROCESSES):
+            p = multiprocessing.Process(target=worker_func, args=(index, shared, equiv))
+            p.start()
+            processes.append(p)
+
+        for p in processes:
+            p.join()
+    #worker_func(0, shared, equiv)
     Timers.toc('network_equivalence')
 
 def worker_func(worker_index, shared, equiv):
@@ -73,10 +95,10 @@ def worker_func(worker_index, shared, equiv):
     np.seterr(all='raise') # raise exceptions on floating-point errors instead of printing warnings
 
     if shared.multithreaded:
-        assert False, "No multithreadding support yet"
-        # reinit_onnx_sessions(shared.network)
-        # Timers.stack.clear() # reset inherited Timers
-        # tag = f" (Process {worker_index})"
+        reinit_onnx_sessions(shared.network1)
+        reinit_onnx_sessions(shared.network2)
+        Timers.stack.clear() # reset inherited Timers
+        tag = f" (Process {worker_index})"
     else:
         tag = ""
 

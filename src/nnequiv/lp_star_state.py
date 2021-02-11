@@ -7,15 +7,13 @@ from nnenum.lp_star_state import LpStarState
 from nnenum.network import ReluLayer
 from nnenum.lpinstance import LpInstance
 
-StarSetId = 1
 
 class EquivStarState(LpStarState):
+    # TODO(steuber): Improve LPI Handling (we are making too many copies here!)
     def __init__(self, network_count, from_star_state=None):
-        global StarSetId
+        self.serialized=False
         self._fully_initialized=False
-        self.id = StarSetId
         self.from_id=0
-        StarSetId+=1
         if from_star_state is not None:
             self.star = from_star_state.star
             self.prefilter = copy.deepcopy(from_star_state.prefilter)
@@ -43,7 +41,21 @@ class EquivStarState(LpStarState):
             self.network_count=network_count
             self._fully_initialized=True
             self.freeze_attrs()
-    
+
+    def serialize(self):
+        if super(EquivStarState,self).serialize():
+            self.initial_star.lpi.serialize()
+            for s in self.output_stars:
+                if s is not None:
+                    s.lpi.serialize()
+
+    def deserialize(self):
+        if super(EquivStarState,self).deserialize():
+            self.initial_star.lpi.deserialize()
+            for s in self.output_stars:
+                if s is not None:
+                    s.lpi.deserialize()
+
     def freeze_attrs(self):
         if self._fully_initialized:
             self._frozen = True
@@ -84,13 +96,12 @@ class EquivStarState(LpStarState):
         rv = EquivStarState(self.network_count,
             from_star_state=rv
         )
-        rv.initial_star=self.initial_star
-        rv.from_id = self.id
+        rv.initial_star=self.initial_star.copy()
         rv.cur_network = self.cur_network
         
         # TODO(steuber): Recheck this procedure
         for x in range(0, self.cur_network):
-            rv.output_stars[x]=self.output_stars[x]
+            rv.output_stars[x]=self.output_stars[x].copy()
         # rv.star.check_input_box_bounds_slow()
         return rv
     

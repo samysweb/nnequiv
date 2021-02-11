@@ -406,7 +406,7 @@ class SharedState(Freezable):
         Timers.tic('put_queue')
 
         if self.multithreaded:
-            ss.star.lpi.serialize()
+            ss.serialize()
 
         self.more_work_queue.put(ss)
 
@@ -424,7 +424,7 @@ class SharedState(Freezable):
             rv = self.more_work_queue.get(block=block, timeout=timeout)
 
             if self.multithreaded and not skip_deserialize:
-                rv.star.lpi.deserialize()
+                rv.deserialize()
 
         except queue.Empty:
             rv = None

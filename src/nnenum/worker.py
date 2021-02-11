@@ -111,6 +111,7 @@ class Worker(Freezable):
         Timers.tic('post_loop')
         self.update_final_stats()
         self.clear_remaining_work()
+        self.print_progress(force=True)
         Timers.toc('post_loop')
 
     def add_branch_str(self, label):
@@ -432,10 +433,9 @@ class Worker(Freezable):
             if did_lock:
                 self.priv.shared_update_urgent = False
 
-            self.priv.next_shared_var_update = now + Settings.UPDATE_SHARED_VARS_INTERVAL
-
             # can be non-blocking
             if did_lock:
+                self.priv.next_shared_var_update = now + Settings.UPDATE_SHARED_VARS_INTERVAL
                 # update in progress counts
                 self.shared.stars_in_progress.value += self.priv.stars_in_progress
                 self.priv.stars_in_progress = 0
@@ -474,13 +474,13 @@ class Worker(Freezable):
                 if self.is_finished_with_lock():
                     should_exit = True
 
-                self.shared.mutex.release()
-                #########################################
-
                 if not should_exit:
                     Timers.tic('load_balancing')
                     self.do_load_balancing(num_zeros)
                     Timers.toc('load_balancing')
+
+                self.shared.mutex.release()
+                #########################################
 
             Timers.toc('update_shared_variables')
 
@@ -496,7 +496,7 @@ class Worker(Freezable):
         ##############################
         self.priv.shared_update_urgent = True
 
-    def print_progress(self):
+    def print_progress(self, force=False):
         'periodically print progress (worker 0 only)'
 
         if self.priv.worker_index == 0:
@@ -511,7 +511,7 @@ class Worker(Freezable):
                 self.timeout()
 
             if Settings.PRINT_OUTPUT and Settings.PRINT_PROGRESS and \
-               now - self.priv.last_print_time > Settings.PRINT_INTERVAL:
+                    (now - self.priv.last_print_time > Settings.PRINT_INTERVAL or force==True):
                 Timers.tic("print_progress")
                 
                 # print stats
@@ -560,7 +560,7 @@ class Worker(Freezable):
                 expected_stars = round(1 if finished_frac < 1e-9 else finished / finished_frac)
 
                 print(f"({time_str}) Q: {qsize}, Sets: {finished}/{total_stars} " + \
-                      f" ({round(finished_frac * 100, 3)}%) ETA: {eta} (expected {expected_stars} stars)   ", end="\r")
+                      f" ({round(finished_frac * 100, 3)}%) ETA: {eta} (expected {expected_stars} stars)   ", end="\n")
 
                 log_prints = math.log(self.priv.num_prints, 2)
                 

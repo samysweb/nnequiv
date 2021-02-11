@@ -27,6 +27,7 @@ class LpStarState(Freezable):
         
         self.star = None
         self.prefilter = None
+        self.serialized=False
         
         self.cur_layer = 0
         self.work_frac = 1.0 # fraction of work represented by this star
@@ -287,6 +288,23 @@ class LpStarState(Freezable):
         Timers.toc('split_enumerate')
 
         return rv
+
+
+    def serialize(self):
+        if not self.serialized:
+            self.star.lpi.serialize()
+            self.serialized = True
+            return True
+        else:
+            return False
+
+    def deserialize(self):
+        if self.serialized:
+            self.star.lpi.deserialize()
+            self.serialized = False
+            return True
+        else:
+            return False
 
     def do_first_relu_split(self, network, spec, start_time):
         '''

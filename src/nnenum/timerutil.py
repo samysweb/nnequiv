@@ -7,8 +7,11 @@ September 2016
 '''
 
 import time
+import logging
 
 from termcolor import cprint
+
+logger = logging.getLogger(__name__)
 
 class TimerData():
     'Performance timer which can be started with tic() and paused with toc()'
@@ -76,6 +79,7 @@ class TimerData():
             raise RuntimeError("Timer stopped without being started: {}".format(self.name))
 
         self.total_secs += time.perf_counter() - self.last_start_time
+        logger.debug(f"Timer {self.name} increase: {time.perf_counter() - self.last_start_time}s (total {self.total_secs}s)")
         self.last_start_time = None
 
 class Timers():
