@@ -41,18 +41,20 @@ def main():
 	Settings.CHECK_SINGLE_THREAD_BLAS = True
 	Settings.BRANCH_MODE = Settings.BRANCH_EXACT
 	Settings.SPLIT_TOLERANCE = 1e-8
-	Settings.NUM_PROCESSES = 4  # if > 1, then force multiprocessing during lp step
+	Settings.NUM_PROCESSES = 1  # if > 1, then force multiprocessing during lp step
 	Settings.PARALLEL_ROOT_LP = True  # near the root of the search, use parallel lp, override NUM_LP_PROCESES if true
 	Settings.EAGER_BOUNDS = True
 
 	net1File = sys.argv[1]
 	net2File = sys.argv[2]
+	property = sys.argv[3]
+	epsilon = float(sys.argv[4])
 
 	network1, network2 = load_networks(net1File, net2File)
 
-	input = generateBox(network1.get_input_shape(),"1010")
+	input = generateBox(network1.get_input_shape(),property)
 
-	check_equivalence(network1, network2, input, EpsilonEquivalence(0.05, networks=[network1,network2]))
+	check_equivalence(network1, network2, input, EpsilonEquivalence(epsilon, networks=[network1,network2]))
 	print("")
 	Timers.print_stats()
 	print("")

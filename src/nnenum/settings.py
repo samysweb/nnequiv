@@ -130,3 +130,6 @@ class Settings(metaclass=FreezableMeta):
         cls.ADVERSARIAL_ORIG_IMAGE = None
         cls.ADVERSARIAL_ORIG_LABEL = None
         cls.ADVERSARIAL_TARGET = None # can optionally be set to specific class, default: any misclassification
+
+        ### Equivalence Settings ###
+        cls.LOG_EPSILONS = False

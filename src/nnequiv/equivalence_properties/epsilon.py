@@ -1,3 +1,5 @@
+from nnenum.settings import Settings
+
 class EpsilonEquivalence:
 	def __init__(self, epsilon, networks=None):
 		self.epsilon = epsilon
@@ -27,7 +29,8 @@ class EpsilonEquivalence:
 						inVal = input.astype(net.layers[0].dtype)
 						outputs.append(net.execute(inVal))
 				raise NotEpsilonEquivalentException(upper, outputs=outputs)
-			print(f"[EQUIV] {lower}, {upper}")
+			if Settings.LOG_EPSILONS:
+				print(f"[EQUIV] {lower}, {upper}")
 
 class NotEpsilonEquivalentException(Exception):
 	def __init__(self, distance,outputs=None):
