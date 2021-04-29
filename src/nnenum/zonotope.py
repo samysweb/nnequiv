@@ -368,6 +368,8 @@ class Zonotope(Freezable):
         sat_corner_list = [ib[d][0] if hyperplane_vec[d] > 0 else ib[d][1] for d in range(dims)]
         unsat_corner_list = [ib[d][1] if hyperplane_vec[d] > 0 else ib[d][0] for d in range(dims)]
 
+        assert np.dot(sat_corner_list,hyperplane_vec)<rhs, "contract_domain_new executed on non intersecting hyperspace"
+
         # construct matrix of sat corners
         sat_corner_matrix = np.array([sat_corner_list] * dims, dtype=self.dtype)
 
