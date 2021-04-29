@@ -129,15 +129,15 @@ class LpInstance(Freezable):
         Timers.toc('serialize')
 
     # removed this, as get_col_bounds shouldn't be used externally
-    #def set_col_bounds(self, col, lb, ub):
-    #    'set double-bounded column bounds'
+    def set_col_bounds(self, col, lb, ub):
+       'set double-bounded column bounds'
 
-    #    col_type = glpk.glp_get_col_type(self.lp, col + 1)
+       col_type = glpk.glp_get_col_type(self.lp, col + 1)
 
-    #    if col_type != glpk.GLP_DB:
-    #        print(f"Warning: Contract col {col} to {lb, ub} skipped (col type is not GLP_DB):\n{self}")
-    #    else:
-    #        glpk.glp_set_col_bnds(self.lp, col + 1, glpk.GLP_DB, lb, ub)  # double-bounded variable
+       if col_type != glpk.GLP_DB:
+           print(f"Warning: Contract col {col} to {lb, ub} skipped (col type is not GLP_DB):\n{self}")
+       else:
+           glpk.glp_set_col_bnds(self.lp, col + 1, glpk.GLP_DB, lb, ub)  # double-bounded variable
 
     def _get_col_bounds(self):
         '''get column bounds
