@@ -72,4 +72,5 @@ class StateManager:
 		self.enumeration_stack.append(el)
 
 	def check(self, el: EnumerationStackElement):
-		self.property.check(el)
+		if el.state.is_feasible(self.networks):
+			self.property.check(el)

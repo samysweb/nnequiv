@@ -9,11 +9,11 @@ from nnenum.zonotope import Zonotope
 
 
 class LayerBounds:
-	def __init__(self):
+	def __init__(self,branching_decisions=[[]]):
 		self.output_bounds = None
 		self.branching_neurons = None
 		# TODO(steuber): Remove? (only debugging)
-		self.branching_decisions = [[]]
+		self.branching_decisions = branching_decisions
 
 	def clear_output_bounds(self):
 		self.output_bounds = None
@@ -32,18 +32,23 @@ class LayerBounds:
 		self.branching_neurons = self.branching_neurons[1:]
 		return rv
 
-	def process_layer(self, zono,start_with=0, include_start=True):
+	def process_layer(self, zono, start_with=0, include_start=True):
+		if len(self.branching_decisions[-1])==0:
+			self.branching_decisions[-1]+=[None]*zono.mat_t.shape[0]
 		if self.output_bounds is None or start_with!=0:
 			self.output_bounds = zono.box_bounds()
 			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
 			                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
 			if not include_start and self.branching_neurons[0]==start_with:
 				self.branching_neurons=self.branching_neurons[1:]
-			for b in self.output_bounds:
+
+			for i,b in enumerate(self.output_bounds[start_with:]):
 				if b[1] < -Settings.SPLIT_TOLERANCE:
-					self.branching_decisions[-1].append(False)
-				else:  # includes b[0]>Settings.SPLIT_TOLERANCE
-					self.branching_decisions[-1].append(True)
+					self.branching_decisions[-1][i+start_with]=False
+				elif b[0] > Settings.SPLIT_TOLERANCE:
+					self.branching_decisions[-1][i + start_with] = True
+				else:
+					self.branching_decisions[-1][i + start_with]=None
 
 	def copy(self):
 		rv = LayerBounds()
@@ -66,7 +71,7 @@ class ZonoState:
 		self.cur_layer = 0
 		self.split_heuristic = None
 		self.lpi = None
-
+		self.branching = []
 		self.initial_zono = None
 		self.layer_bounds = LayerBounds()
 
@@ -86,8 +91,10 @@ class ZonoState:
 		self.cur_network = state.cur_network
 		self.cur_layer = state.cur_layer
 		self.layer_bounds = LayerBounds()
+		self.layer_bounds.branching_decisions = copy.deepcopy(state.layer_bounds.branching_decisions)
 		self.split_heuristic = state.split_heuristic.copy()
 		self.lpi = LpInstance(other_lpi=state.lpi)
+		self.branching = copy.copy(state.branching)
 		for x in range(0, self.cur_network):
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
 
@@ -104,12 +111,15 @@ class ZonoState:
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
 		child = ZonoState(self.network_count, state=self)
+		child.layer_bounds.branching_decisions[-1][index]=not child.layer_bounds.branching_decisions[-1][index]
 		pos, neg = self, child
 
 		pos.contract_domain(-row, bias, index)
 		neg.contract_domain(row, -bias, index)
 		pos.lpi.add_dense_row(-row, -bias)
 		neg.lpi.add_dense_row(row, -bias)
+		pos.branching.append((self.cur_network, self.cur_layer, index, True))
+		neg.branching.append((self.cur_network, self.cur_layer, index, False))
 
 		neg.zono.mat_t[index] = 0.0
 		neg.zono.center[index] = 0.0
@@ -168,6 +178,23 @@ class ZonoState:
 			return True
 		else:
 			return False
+
+	def is_feasible(self, networks):
+		for i, (lb, ub) in enumerate(self.zono.init_bounds):
+			self.lpi.set_col_bounds(i, lb, ub)
+		feasible = self.lpi.minimize(None,fail_on_unsat=False)
+		if feasible is None:
+			# TODO(steuber): Stats on wrong paths
+			return False
+		else:
+			print(f"Feasible: {feasible}")
+			print(f"Net 1: {networks[0].execute(np.array(feasible,dtype=np.float32), save_branching=True)}")
+			print(f"Net 2: {networks[1].execute(np.array(feasible,dtype=np.float32), save_branching=True)}")
+			print(f"Zon 1: {np.dot(self.output_zonos[0].mat_t,feasible) + self.output_zonos[0].center}")
+			print(f"Zonotope: {self.output_zonos[0].mat_t}")
+			print(f"Branching: {self.layer_bounds.branching_decisions}")
+			print(f"Branches: {str(self.branching)}")
+			return True
 
 
 class TrivialHeuristic:
