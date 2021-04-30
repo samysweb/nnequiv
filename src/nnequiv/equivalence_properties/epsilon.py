@@ -18,6 +18,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 		eps = abs(np.max(final_bounds))
 		if eps > self.epsilon:
 			print(f"[NEQUIV] {eps}")
-			# TODO(steuber): Exception handling or similar
+			return False, eps
 		else:
 			print(f"[EQUIV] {eps}")
+			return True, eps

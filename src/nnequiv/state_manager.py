@@ -73,4 +73,8 @@ class StateManager:
 
 	def check(self, el: EnumerationStackElement):
 		if el.state.is_feasible(self.networks):
-			self.property.check(el)
+			equiv, data = self.property.check(el)
+			if not equiv:
+				print(f"\n[NEQUIV] {data}\n")
+			else:
+				print(f"\n[EQUIV] {data}\n")
