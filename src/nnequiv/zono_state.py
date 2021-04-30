@@ -31,25 +31,22 @@ class LayerBounds:
 		self.branching_neurons = self.branching_neurons[1:]
 		return rv
 
-	def process_layer(self, zono):
-		Timers.tic('layer_bounds_process_layer')
-		self.output_bounds = zono.box_bounds()
+	def process_layer(self, zono, start_with=0):
+		if self.output_bounds is None or start_with!=0:
+			Timers.tic('layer_bounds_process_layer')
+			self.output_bounds = zono.box_bounds()
+			#old_branching_neurons = enumerate(self.branching_neurons.copy()) if self.branching_neurons is not None else range(len(self.output_bounds))
+			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
+		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
+			# if not include_start and len(self.branching_neurons)>0 and self.branching_neurons[0]==start_with:
+			#	self.branching_neurons=self.branching_neurons[1:]
 
-		if self.branching_neurons is None:
-			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[:, 0] < -Settings.SPLIT_TOLERANCE,
-	            self.output_bounds[:, 1] > Settings.SPLIT_TOLERANCE))[0]
-		elif self.branching_neurons.size>0:
-			self.branching_neurons = self.branching_neurons[np.logical_and(self.output_bounds[self.branching_neurons, 0] < -Settings.SPLIT_TOLERANCE,
-	            self.output_bounds[self.branching_neurons, 1] > Settings.SPLIT_TOLERANCE)]
-		else:
-			self.branching_neurons = []
-
-		new_zeros = []
-		for i in range(0,len(self.output_bounds)): # TODO(steuber): Speedup possible!
-			if self.output_bounds[i,1] < -Settings.SPLIT_TOLERANCE:
-				new_zeros.append(i)
-		Timers.toc('layer_bounds_process_layer')
-		return new_zeros
+			new_zeros = []
+			for i in range(start_with,len(self.output_bounds)):
+				if self.output_bounds[i,1] < -Settings.SPLIT_TOLERANCE:
+					new_zeros.append(i)
+			Timers.toc('layer_bounds_process_layer')
+			return new_zeros
 
 	def copy(self):
 		rv = LayerBounds()
@@ -61,6 +58,7 @@ class ZonoState:
 	def __init__(self, network_count, state=None):
 		self.network_count = network_count
 		self.output_zonos = []
+		self.active = True
 		for x in range(0, self.network_count):
 			self.output_zonos.append(None)
 
@@ -105,7 +103,7 @@ class ZonoState:
 
 	def contract_domain(self, row, bias, index):
 		self.zono.contract_domain(row,bias)
-		zeros = self.layer_bounds.process_layer(self.zono)
+		zeros = self.layer_bounds.process_layer(self.zono,start_with=index+1)
 		self.set_to_zero(zeros)
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
@@ -179,6 +177,7 @@ class ZonoState:
 		Timers.toc('set_to_zero')
 
 	def is_finished(self, networks: [NeuralNetwork]):
+		global WRONG, RIGHT, FINISHED_FRAC
 		if self.cur_network < self.network_count and self.cur_layer >= len(networks[self.cur_network].layers):
 			self.cur_layer = 0
 			self.output_zonos[self.cur_network] = self.zono
@@ -192,30 +191,36 @@ class ZonoState:
 			self.cur_network += 1
 			self.from_init_zono(new_zono)
 
+		if not self.is_feasible(networks):
+			WRONG+=1
+			FINISHED_FRAC+=self.workload
+			return True
 		if self.network_count <= self.cur_network:
+			RIGHT+=1
+			FINISHED_FRAC += self.workload
 			return True
 		else:
 			return False
 
 	def is_feasible(self, networks):
-		global WRONG, RIGHT, FINISHED_FRAC
+		Timers.tic('is_feasible')
 		for i, (lb, ub) in enumerate(self.zono.init_bounds):
 			self.lpi.set_col_bounds(i, lb, ub)
 		feasible = self.lpi.minimize(None,fail_on_unsat=False)
-		FINISHED_FRAC+=self.workload
 		if feasible is None:
-			# TODO(steuber): Stats on wrong paths
-			WRONG+=1
+			self.active=False
+			Timers.toc('is_feasible')
 			return False
 		else:
-			RIGHT+=1
+			Timers.toc('is_feasible')
 			return True
+
 
 def status_update():
 	global WRONG, RIGHT, FINISHED_FRAC
 	if FINISHED_FRAC>0:
 		print(
-		f"\rWrong: {WRONG} | Right: {RIGHT} | Total: {WRONG + RIGHT} | Expected {int((WRONG + RIGHT) / FINISHED_FRAC)}")
+		f"\rWrong: {WRONG} | Right: {RIGHT} | Total: {WRONG + RIGHT} | Expected {int((WRONG + RIGHT) / FINISHED_FRAC)}",end="")
 
 
 class TrivialHeuristic:
