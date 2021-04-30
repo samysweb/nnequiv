@@ -31,22 +31,25 @@ class LayerBounds:
 		self.branching_neurons = self.branching_neurons[1:]
 		return rv
 
-	def process_layer(self, zono, start_with=0, include_start=True):
-		if self.output_bounds is None or start_with!=0:
-			Timers.tic('layer_bounds_process_layer')
-			self.output_bounds = zono.box_bounds()
-			#old_branching_neurons = enumerate(self.branching_neurons.copy()) if self.branching_neurons is not None else range(len(self.output_bounds))
-			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
-		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
-			if not include_start and len(self.branching_neurons)>0 and self.branching_neurons[0]==start_with:
-				self.branching_neurons=self.branching_neurons[1:]
+	def process_layer(self, zono):
+		Timers.tic('layer_bounds_process_layer')
+		self.output_bounds = zono.box_bounds()
 
-			new_zeros = []
-			for i in range(start_with,len(self.output_bounds)):
-				if self.output_bounds[i,1] < -Settings.SPLIT_TOLERANCE:
-					new_zeros.append(i)
-			Timers.toc('layer_bounds_process_layer')
-			return new_zeros
+		if self.branching_neurons is None:
+			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[:, 0] < -Settings.SPLIT_TOLERANCE,
+	            self.output_bounds[:, 1] > Settings.SPLIT_TOLERANCE))[0]
+		elif self.branching_neurons.size>0:
+			self.branching_neurons = self.branching_neurons[np.logical_and(self.output_bounds[self.branching_neurons, 0] < -Settings.SPLIT_TOLERANCE,
+	            self.output_bounds[self.branching_neurons, 1] > Settings.SPLIT_TOLERANCE)]
+		else:
+			self.branching_neurons = []
+
+		new_zeros = []
+		for i in range(0,len(self.output_bounds)): # TODO(steuber): Speedup possible!
+			if self.output_bounds[i,1] < -Settings.SPLIT_TOLERANCE:
+				new_zeros.append(i)
+		Timers.toc('layer_bounds_process_layer')
+		return new_zeros
 
 	def copy(self):
 		rv = LayerBounds()
@@ -102,7 +105,7 @@ class ZonoState:
 
 	def contract_domain(self, row, bias, index):
 		self.zono.contract_domain(row,bias)
-		zeros = self.layer_bounds.process_layer(self.zono,start_with=index, include_start=False)
+		zeros = self.layer_bounds.process_layer(self.zono)
 		self.set_to_zero(zeros)
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
@@ -203,21 +206,16 @@ class ZonoState:
 		if feasible is None:
 			# TODO(steuber): Stats on wrong paths
 			WRONG+=1
-			print(f"\rWrong: {WRONG} | Right: {RIGHT} | Total: {WRONG + RIGHT} | Expected {int((WRONG+RIGHT) / FINISHED_FRAC)}",end="")
 			return False
 		else:
 			RIGHT+=1
-			print(f"\rWrong: {WRONG} | Right: {RIGHT} | Total: {WRONG + RIGHT} | Expected {int((WRONG+RIGHT) / FINISHED_FRAC)}")
-			print(f"Feasible: {feasible}")
-			print(f"Net 1: {networks[0].execute(np.array(feasible,dtype=np.float32), save_branching=True)}")
-			print(f"Net 2: {networks[1].execute(np.array(feasible,dtype=np.float32), save_branching=True)}")
-			print(f"Zonotope 1: {np.dot(self.output_zonos[0].mat_t,feasible)+self.output_zonos[0].center}")
-			print(f"Zonotope 2: {np.dot(self.output_zonos[1].mat_t, feasible)+self.output_zonos[1].center}")
-			print(f"Branches: {self.branching}")
-			print(f"Branching: {list(map(lambda x: x.tolist(), self.branching_precise))}")
-			# print(f"Zon 1: {np.dot(self.output_zonos[0].mat_t,feasible) + self.output_zonos[0].center}")
-			# print(f"Branches: {str(self.branching)}")
 			return True
+
+def status_update():
+	global WRONG, RIGHT, FINISHED_FRAC
+	if FINISHED_FRAC>0:
+		print(
+		f"\rWrong: {WRONG} | Right: {RIGHT} | Total: {WRONG + RIGHT} | Expected {int((WRONG + RIGHT) / FINISHED_FRAC)}")
 
 
 class TrivialHeuristic:

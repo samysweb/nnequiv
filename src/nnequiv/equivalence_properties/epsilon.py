@@ -17,8 +17,6 @@ class EpsilonEquivalence(EquivalenceProperty):
 		outsize = mat.shape[0]
 		eps = abs(np.max(final_bounds))
 		if eps > self.epsilon:
-			print(f"[NEQUIV] {eps}")
 			return False, eps
 		else:
-			print(f"[EQUIV] {eps}")
 			return True, eps

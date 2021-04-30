@@ -3,7 +3,7 @@ from nnenum.settings import Settings
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from nnequiv.state_manager import StateManager
-from nnequiv.zono_state import ZonoState
+from nnequiv.zono_state import ZonoState, status_update
 
 
 def make_init_zs(init, networks):
@@ -40,6 +40,7 @@ def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input 
 
 
 def main_loop(manager : StateManager):
+	counter = 0
 	while not manager.done():
 		cur_state = manager.peek()
 		if cur_state.is_finished(manager.get_networks()):
@@ -47,3 +48,6 @@ def main_loop(manager : StateManager):
 			manager.pop()
 		else:
 			manager.push(cur_state.advance_zono(manager.get_networks()))
+		counter+=1
+		if counter%100:
+			status_update()
