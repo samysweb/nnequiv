@@ -195,7 +195,7 @@ class ReluLayer(Freezable):
                     if not self.filter_func(i):
                         continue
                     
-                branch_list.append(val >= 0)
+                branch_list.append(val > 0 if val != 0 else None) # Handle 0 as special case
 
         if self.filter_func is None:
             state = np.clip(state, 0, np.inf)
