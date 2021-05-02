@@ -345,6 +345,7 @@ class Zonotope(Freezable):
 
         for d, lb, ub in tuple_list:
             self.update_init_bounds(d, (lb, ub))
+        return tuple_list
 
     def contract_domain_new(self, hyperplane_vec, rhs):
         '''intersect the initial box with the given halfspace, trying to shrink it
