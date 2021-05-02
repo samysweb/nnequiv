@@ -62,5 +62,6 @@ def main_loop(manager : StateManager):
 		else:
 			manager.push(cur_state.advance_zono(manager.get_networks()))
 		counter+=1
-		if counter%100:
+		if counter%5000:
 			status_update()
+	status_update()

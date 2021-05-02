@@ -78,6 +78,7 @@ class StateManager:
 	def check(self, el: EnumerationStackElement):
 		if el.state.active:
 			equiv, data = self.property.check(el)
+			print(f"\n[DEPTH] {el.state.depth}")
 			if not equiv:
 				print(f"\n[NEQUIV] {data}\n")
 			else:

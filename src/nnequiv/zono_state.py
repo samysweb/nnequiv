@@ -36,20 +36,15 @@ class LayerBounds:
 		if self.output_bounds is None or start_with!=0:
 			Timers.tic('layer_bounds_process_layer')
 			self.output_bounds = zono.box_bounds()
-			#old_branching_neurons = enumerate(self.branching_neurons.copy()) if self.branching_neurons is not None else range(len(self.output_bounds))
-			Timers.tic('layer_bounds_process_layer_branching')
+			new_zeros = None
+			if self.branching_neurons is not None:
+				new_zeros = self.branching_neurons[self.output_bounds[self.branching_neurons,1]<-Settings.SPLIT_TOLERANCE]
+
 			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
 		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
-			Timers.toc('layer_bounds_process_layer_branching')
-			# if not include_start and len(self.branching_neurons)>0 and self.branching_neurons[0]==start_with:
-			#	self.branching_neurons=self.branching_neurons[1:]
 
-			Timers.tic('layer_bounds_process_layer_new_zeros')
-			new_zeros = []
-			for i in range(start_with,len(self.output_bounds)):
-				if self.output_bounds[i,1] < -Settings.SPLIT_TOLERANCE:
-					new_zeros.append(i)
-			Timers.toc('layer_bounds_process_layer_new_zeros')
+			if new_zeros is None:
+				new_zeros = np.nonzero(self.output_bounds[start_with:,1] < -Settings.SPLIT_TOLERANCE)[0]+start_with
 			Timers.toc('layer_bounds_process_layer')
 			return new_zeros
 
@@ -75,11 +70,12 @@ class ZonoState:
 		self.cur_layer = 0
 		self.split_heuristic = None
 		self.lpi = None
-		self.branching = []
+		#self.branching = []
 		self.initial_zono = None
 		self.layer_bounds = LayerBounds()
 		self.workload = 1.0
-		self.branching_precise=[]
+		self.depth=0
+		#self.branching_precise=[]
 
 
 	def from_init_zono(self, init: Zonotope):
@@ -100,26 +96,38 @@ class ZonoState:
 		self.layer_bounds = LayerBounds()
 		self.split_heuristic = state.split_heuristic.copy()
 		self.lpi = LpInstance(other_lpi=state.lpi)
-		self.branching = copy.copy(state.branching)
-		self.branching_precise = copy.deepcopy(state.branching_precise)
+		#self.branching = copy.copy(state.branching)
+		#self.branching_precise = copy.deepcopy(state.branching_precise)
 		state.workload/=2
 		self.workload=state.workload
+		self.depth=state.depth
 		for x in range(0, self.cur_network):
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
 		Timers.toc('zono_state_from_state')
 
-	def contract_domain(self, row, bias, index):
+	def contract_domain(self, row, bias, index, networks):
 		Timers.tic('zono_state_contract_domain')
-		self.zono.contract_domain(row,bias)
+		tuple_list = self.zono.contract_domain(row,bias)
+		self.update_lp(row, bias, tuple_list)
+		# TODO(steuber): How often should we really be doing this feasibilitiy this?
+		self.check_feasible(networks)
 		zeros = self.layer_bounds.process_layer(self.zono,start_with=index+1)
 		self.set_to_zero(zeros)
 		Timers.toc('zono_state_contract_domain')
+
+	def update_lp(self, row, bias, tuple_list):
+		Timers.tic('zono_state_update_lp')
+		self.lpi.add_dense_row(row, bias)
+		for i, l, u in tuple_list:
+			self.lpi.set_col_bounds(i, l, u)
+		Timers.toc('zono_state_update_lp')
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
 		Timers.tic('do_first_relu_split')
 		network = networks[self.cur_network]
 		assert isinstance(network.layers[self.cur_layer], ReluLayer)
 
+		self.depth+=1
 		index = self.layer_bounds.pop_branch()
 		if index is None:
 			Timers.toc('do_first_relu_split')
@@ -129,13 +137,11 @@ class ZonoState:
 		child = ZonoState(self.network_count, state=self)
 		pos, neg = self, child
 
-		pos.contract_domain(-row, bias, index)
-		neg.contract_domain(row, -bias, index)
-		pos.lpi.add_dense_row(-row, bias)
-		neg.lpi.add_dense_row(row, -bias)
-		pos.branching.append((self.cur_network, self.cur_layer, index, True))
-		neg.branching.append((self.cur_network, self.cur_layer, index, False))
-		neg.branching_precise[-1][index]=False
+		pos.contract_domain(-row, bias, index, networks)
+		neg.contract_domain(row, -bias, index, networks)
+		#pos.branching.append((self.cur_network, self.cur_layer, index, True))
+		#neg.branching.append((self.cur_network, self.cur_layer, index, False))
+		#neg.branching_precise[-1][index]=False
 
 		neg.zono.mat_t[index] = 0.0
 		neg.zono.center[index] = 0.0
@@ -153,8 +159,8 @@ class ZonoState:
 		Timers.tic('propagate_layer_transform')
 		layer.transform_zono(self.zono)
 		Timers.toc('propagate_layer_transform')
-		self.branching_precise.append(np.array([]))
-		self.branching_precise.append(np.array([True] * self.zono.mat_t.shape[0]))
+		#self.branching_precise.append(np.array([]))
+		#self.branching_precise.append(np.array([True] * self.zono.mat_t.shape[0]))
 		Timers.toc('propagate_layer')
 
 	def next_layer(self):
@@ -185,14 +191,17 @@ class ZonoState:
 	def set_to_zero(self, zeros):
 		Timers.tic('set_to_zero')
 		if zeros is not None:
-			self.branching_precise[-1][zeros]=False
+			#self.branching_precise[-1][zeros]=False
 			self.zono.mat_t[zeros] = 0.0
 			self.zono.center[zeros] = 0.0
 		Timers.toc('set_to_zero')
 
 	def is_finished(self, networks: [NeuralNetwork]):
-		global WRONG, RIGHT, FINISHED_FRAC
+		global RIGHT, FINISHED_FRAC
 		Timers.tic('is_finished')
+		if not self.active:
+			Timers.toc('is_finished')
+			return True
 		if self.cur_network < self.network_count and self.cur_layer >= len(networks[self.cur_network].layers):
 			self.cur_layer = 0
 			self.output_zonos[self.cur_network] = self.zono
@@ -206,11 +215,6 @@ class ZonoState:
 			self.cur_network += 1
 			self.from_init_zono(new_zono)
 
-		if not self.is_feasible(networks):
-			WRONG+=1
-			FINISHED_FRAC+=self.workload
-			Timers.toc('is_finished')
-			return True
 		if self.network_count <= self.cur_network:
 			RIGHT+=1
 			FINISHED_FRAC += self.workload
@@ -220,17 +224,15 @@ class ZonoState:
 			Timers.toc('is_finished')
 			return False
 
-	def is_feasible(self, networks):
+	def check_feasible(self, networks):
+		global WRONG, FINISHED_FRAC
 		Timers.tic('is_feasible')
-		Timers.tic('is_feasible_bounds')
-		for i, (lb, ub) in enumerate(self.zono.init_bounds):
-			self.lpi.set_col_bounds(i, lb, ub)
-		Timers.toc('is_feasible_bounds')
-		Timers.tic('is_feasible_minimize')
 		feasible = self.lpi.minimize(None,fail_on_unsat=False)
-		Timers.toc('is_feasible_minimize')
 		if feasible is None:
 			self.active=False
+			WRONG+=1
+			print(f"\n[INVALID_DEPTH] {self.depth}")
+			FINISHED_FRAC+=self.workload
 			Timers.toc('is_feasible')
 			return False
 		else:
