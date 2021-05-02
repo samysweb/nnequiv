@@ -157,6 +157,12 @@ class Timers():
                                       f"{[t.name for t in Timers.stack]}"
 
     @staticmethod
+    def tocRec():
+        while len(Timers.stack)>0:
+            Timers.stack[-1].toc()
+            Timers.stack.pop()
+
+    @staticmethod
     def print_stats(name=None, short=False):
         'print statistics about performance timers to stdout'
 
