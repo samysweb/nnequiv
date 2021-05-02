@@ -1,5 +1,6 @@
 import numpy as np
 
+from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from .property import EquivalenceProperty
 from ..zono_state import ZonoState
@@ -10,6 +11,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 		self.epsilon = epsilon
 
 	def check(self, zono : ZonoState):
+		Timers.tic('check_epsilon')
 		mat = zono.state.output_zonos[0].mat_t - zono.state.output_zonos[1].mat_t
 		bias = zono.state.output_zonos[0].center - zono.state.output_zonos[1].center
 		out = Zonotope(bias, mat, zono.state.output_zonos[1].init_bounds)
@@ -17,6 +19,8 @@ class EpsilonEquivalence(EquivalenceProperty):
 		outsize = mat.shape[0]
 		eps = abs(np.max(final_bounds))
 		if eps > self.epsilon:
+			Timers.toc('check_epsilon')
 			return False, eps
 		else:
+			Timers.toc('check_epsilon')
 			return True, eps

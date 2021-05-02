@@ -26,7 +26,8 @@ class LayerBounds:
 			return 0
 
 	def pop_branch(self):
-		assert len(self.branching_neurons) > 0
+		if self.branching_neurons is None or len(self.branching_neurons) <= 0:
+			return None
 		rv = self.branching_neurons[0]
 		self.branching_neurons = self.branching_neurons[1:]
 		return rv
@@ -36,15 +37,19 @@ class LayerBounds:
 			Timers.tic('layer_bounds_process_layer')
 			self.output_bounds = zono.box_bounds()
 			#old_branching_neurons = enumerate(self.branching_neurons.copy()) if self.branching_neurons is not None else range(len(self.output_bounds))
+			Timers.tic('layer_bounds_process_layer_branching')
 			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
 		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
+			Timers.toc('layer_bounds_process_layer_branching')
 			# if not include_start and len(self.branching_neurons)>0 and self.branching_neurons[0]==start_with:
 			#	self.branching_neurons=self.branching_neurons[1:]
 
+			Timers.tic('layer_bounds_process_layer_new_zeros')
 			new_zeros = []
 			for i in range(start_with,len(self.output_bounds)):
 				if self.output_bounds[i,1] < -Settings.SPLIT_TOLERANCE:
 					new_zeros.append(i)
+			Timers.toc('layer_bounds_process_layer_new_zeros')
 			Timers.toc('layer_bounds_process_layer')
 			return new_zeros
 
@@ -87,6 +92,7 @@ class ZonoState:
 		self.split_heuristic = TrivialHeuristic(len(init.init_bounds))
 
 	def from_state(self, state):
+		Timers.tic('zono_state_from_state')
 		self.zono = state.zono.deep_copy()
 		self.initial_zono = state.initial_zono.deep_copy()
 		self.cur_network = state.cur_network
@@ -100,11 +106,14 @@ class ZonoState:
 		self.workload=state.workload
 		for x in range(0, self.cur_network):
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
+		Timers.toc('zono_state_from_state')
 
 	def contract_domain(self, row, bias, index):
+		Timers.tic('zono_state_contract_domain')
 		self.zono.contract_domain(row,bias)
 		zeros = self.layer_bounds.process_layer(self.zono,start_with=index+1)
 		self.set_to_zero(zeros)
+		Timers.toc('zono_state_contract_domain')
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
 		Timers.tic('do_first_relu_split')
@@ -112,6 +121,9 @@ class ZonoState:
 		assert isinstance(network.layers[self.cur_layer], ReluLayer)
 
 		index = self.layer_bounds.pop_branch()
+		if index is None:
+			Timers.toc('do_first_relu_split')
+			return None
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
 		child = ZonoState(self.network_count, state=self)
@@ -138,7 +150,9 @@ class ZonoState:
 		network = networks[self.cur_network]
 		layer = network.layers[self.cur_layer]
 		assert not isinstance(layer, ReluLayer)
+		Timers.tic('propagate_layer_transform')
 		layer.transform_zono(self.zono)
+		Timers.toc('propagate_layer_transform')
 		self.branching_precise.append(np.array([]))
 		self.branching_precise.append(np.array([True] * self.zono.mat_t.shape[0]))
 		Timers.toc('propagate_layer')
@@ -178,6 +192,7 @@ class ZonoState:
 
 	def is_finished(self, networks: [NeuralNetwork]):
 		global WRONG, RIGHT, FINISHED_FRAC
+		Timers.tic('is_finished')
 		if self.cur_network < self.network_count and self.cur_layer >= len(networks[self.cur_network].layers):
 			self.cur_layer = 0
 			self.output_zonos[self.cur_network] = self.zono
@@ -194,19 +209,26 @@ class ZonoState:
 		if not self.is_feasible(networks):
 			WRONG+=1
 			FINISHED_FRAC+=self.workload
+			Timers.toc('is_finished')
 			return True
 		if self.network_count <= self.cur_network:
 			RIGHT+=1
 			FINISHED_FRAC += self.workload
+			Timers.toc('is_finished')
 			return True
 		else:
+			Timers.toc('is_finished')
 			return False
 
 	def is_feasible(self, networks):
 		Timers.tic('is_feasible')
+		Timers.tic('is_feasible_bounds')
 		for i, (lb, ub) in enumerate(self.zono.init_bounds):
 			self.lpi.set_col_bounds(i, lb, ub)
+		Timers.toc('is_feasible_bounds')
+		Timers.tic('is_feasible_minimize')
 		feasible = self.lpi.minimize(None,fail_on_unsat=False)
+		Timers.toc('is_feasible_minimize')
 		if feasible is None:
 			self.active=False
 			Timers.toc('is_feasible')
@@ -218,9 +240,11 @@ class ZonoState:
 
 def status_update():
 	global WRONG, RIGHT, FINISHED_FRAC
+	Timers.tic('status_update')
 	if FINISHED_FRAC>0:
 		print(
 		f"\rWrong: {WRONG} | Right: {RIGHT} | Total: {WRONG + RIGHT} | Expected {int((WRONG + RIGHT) / FINISHED_FRAC)}",end="")
+	Timers.toc('status_update')
 
 
 class TrivialHeuristic:

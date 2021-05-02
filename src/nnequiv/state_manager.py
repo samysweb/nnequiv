@@ -1,4 +1,5 @@
 from nnenum.network import NeuralNetwork
+from nnenum.timerutil import Timers
 from nnequiv.equivalence_properties import EquivalenceProperty
 from nnequiv.zono_state import ZonoState
 
@@ -25,14 +26,17 @@ class EnumerationStackElement:
 		return self.state.is_finished(networks)
 
 	def advance_zono(self, networks):
+		Timers.tic('advance_zono')
 		new_el = self.state.do_first_relu_split(networks)
 		if new_el is not None:
 			self.next.append(new_el)
 		self.state.next_layer()
 		crossed, mat, center = self.state.propagate_up_to_split(networks)
 		if crossed:  # We crossed a layer => new EnumerationStackElement
+			Timers.toc('advance_zono')
 			return EnumerationStackElement(self.state, mat, center, [])
 		else:
+			Timers.toc('advance_zono')
 			return EnumerationStackElement(self.state, self.mat, self.center, [])
 
 

@@ -1,3 +1,5 @@
+import signal
+
 from nnenum.network import NeuralNetwork
 from nnenum.settings import Settings
 from nnenum.timerutil import Timers
@@ -35,13 +37,24 @@ def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input 
 
 
 
+class GracefulKiller:
+	kill_now = False
+	def __init__(self):
+		signal.signal(signal.SIGINT, self.exit_gracefully)
+		signal.signal(signal.SIGTERM, self.exit_gracefully)
 
+	def exit_gracefully(self,signum, frame):
+		print("\nEXITING...")
+		Timers.tocRec()
+		Timers.print_stats()
+		self.kill_now = True
 
 
 
 def main_loop(manager : StateManager):
 	counter = 0
-	while not manager.done():
+	killer = GracefulKiller()
+	while not manager.done() and not killer.kill_now:
 		cur_state = manager.peek()
 		if cur_state.is_finished(manager.get_networks()):
 			manager.check(cur_state)
