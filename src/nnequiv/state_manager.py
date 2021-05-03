@@ -1,6 +1,7 @@
 from nnenum.network import NeuralNetwork
 from nnenum.timerutil import Timers
 from nnequiv.equivalence_properties import EquivalenceProperty
+from nnequiv.global_state import GLOBAL_STATE
 from nnequiv.zono_state import ZonoState
 
 
@@ -79,6 +80,9 @@ class StateManager:
 		if el.state.active:
 			equiv, data = self.property.check(el)
 			print(f"\n[DEPTH] {el.state.depth}")
+			GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
+			GLOBAL_STATE.RIGHT+=1
+			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 			if not equiv:
 				print(f"\n[NEQUIV] {data}\n")
 			else:

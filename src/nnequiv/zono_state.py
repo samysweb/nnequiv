@@ -6,9 +6,8 @@ from nnenum.network import NeuralNetwork, ReluLayer
 from nnenum.settings import Settings
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
-WRONG = 0
-RIGHT = 0
-FINISHED_FRAC = 0.0
+from nnequiv.global_state import GLOBAL_STATE
+
 
 class LayerBounds:
 	def __init__(self):
@@ -197,7 +196,6 @@ class ZonoState:
 		Timers.toc('set_to_zero')
 
 	def is_finished(self, networks: [NeuralNetwork]):
-		global RIGHT, FINISHED_FRAC
 		Timers.tic('is_finished')
 		if not self.active:
 			Timers.toc('is_finished')
@@ -216,8 +214,6 @@ class ZonoState:
 			self.from_init_zono(new_zono)
 
 		if self.network_count <= self.cur_network:
-			RIGHT+=1
-			FINISHED_FRAC += self.workload
 			Timers.toc('is_finished')
 			return True
 		else:
@@ -225,14 +221,14 @@ class ZonoState:
 			return False
 
 	def check_feasible(self, networks):
-		global WRONG, FINISHED_FRAC
+		assert self.active
 		Timers.tic('is_feasible')
 		feasible = self.lpi.minimize(None,fail_on_unsat=False)
 		if feasible is None:
 			self.active=False
-			WRONG+=1
-			print(f"\n[INVALID_DEPTH] {self.depth}")
-			FINISHED_FRAC+=self.workload
+			GLOBAL_STATE.WRONG+=1
+			GLOBAL_STATE.INVALID_DEPTH.append(self.depth)
+			GLOBAL_STATE.FINISHED_FRAC+=self.workload
 			Timers.toc('is_feasible')
 			return False
 		else:
@@ -241,11 +237,10 @@ class ZonoState:
 
 
 def status_update():
-	global WRONG, RIGHT, FINISHED_FRAC
 	Timers.tic('status_update')
-	if FINISHED_FRAC>0:
+	if GLOBAL_STATE.FINISHED_FRAC>0:
 		print(
-		f"\rWrong: {WRONG} | Right: {RIGHT} | Total: {WRONG + RIGHT} | Expected {int((WRONG + RIGHT) / FINISHED_FRAC)}",end="")
+		f"\rWrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {GLOBAL_STATE.WRONG + GLOBAL_STATE.RIGHT} | Expected {int((GLOBAL_STATE.WRONG + GLOBAL_STATE.RIGHT) / GLOBAL_STATE.FINISHED_FRAC)}",end="")
 	Timers.toc('status_update')
 
 

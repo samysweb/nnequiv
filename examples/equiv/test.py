@@ -35,12 +35,7 @@ def generateBox(inputShape, index):
 def main():
 	Settings.TIMING_STATS = True
 	# TODO(steuber): Check out implications of this setting
-	Settings.CHECK_SINGLE_THREAD_BLAS = True
-	Settings.BRANCH_MODE = Settings.BRANCH_EXACT
 	Settings.SPLIT_TOLERANCE = 1e-8
-	Settings.NUM_PROCESSES = 1  # if > 1, then force multiprocessing during lp step
-	Settings.PARALLEL_ROOT_LP = True  # near the root of the search, use parallel lp, override NUM_LP_PROCESES if true
-	Settings.EAGER_BOUNDS = True
 
 	net1File = sys.argv[1]
 	net2File = sys.argv[2]

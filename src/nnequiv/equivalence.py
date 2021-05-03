@@ -4,6 +4,7 @@ from nnenum.network import NeuralNetwork
 from nnenum.settings import Settings
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
+from nnequiv.global_state import GLOBAL_STATE
 from nnequiv.state_manager import StateManager
 from nnequiv.zono_state import ZonoState, status_update
 
@@ -47,6 +48,8 @@ class GracefulKiller:
 		print("\nEXITING...")
 		Timers.tocRec()
 		Timers.print_stats()
+		print(f"\n[INVALID_DEPTH] {str(GLOBAL_STATE.INVALID_DEPTH)}")
+		print(f"[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
 		self.kill_now = True
 
 
@@ -65,3 +68,5 @@ def main_loop(manager : StateManager):
 		if counter%5000:
 			status_update()
 	status_update()
+	print(f"\n[INVALID_DEPTH] {str(GLOBAL_STATE.INVALID_DEPTH)}")
+	print(f"[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
