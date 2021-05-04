@@ -1,4 +1,5 @@
 import signal
+import time
 
 from nnenum.network import NeuralNetwork
 from nnenum.settings import Settings
@@ -57,6 +58,9 @@ class GracefulKiller:
 def main_loop(manager : StateManager):
 	counter = 0
 	killer = GracefulKiller()
+	start_time=time.perf_counter()
+	timing_printed = False
+	to=9000
 	while not manager.done() and not killer.kill_now:
 		cur_state = manager.peek()
 		if cur_state.is_finished(manager.get_networks()):
@@ -67,6 +71,11 @@ def main_loop(manager : StateManager):
 		counter+=1
 		if counter%5000:
 			status_update()
+		if time.perf_counter()-start_time > to and not timing_printed:
+			Timers.tocRec()
+			Timers.print_stats()
+			timing_printed=True
+			break
 	status_update()
 	print(f"\n[INVALID_DEPTH] {str(GLOBAL_STATE.INVALID_DEPTH)}")
 	print(f"[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
