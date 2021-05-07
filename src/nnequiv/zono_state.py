@@ -104,12 +104,12 @@ class ZonoState:
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
 		Timers.toc('zono_state_from_state')
 
-	def contract_domain(self, row, bias, index, networks):
+	def contract_domain(self, row, bias, index, networks,overflow):
 		Timers.tic('zono_state_contract_domain')
 		tuple_list = self.zono.contract_domain(row,bias)
 		self.update_lp(row, bias, tuple_list)
 		# TODO(steuber): How often should we really be doing this feasibilitiy this?
-		self.check_feasible(networks)
+		self.check_feasible(overflow,networks)
 		zeros = self.layer_bounds.process_layer(self.zono,start_with=index+1)
 		self.set_to_zero(zeros)
 		Timers.toc('zono_state_contract_domain')
@@ -136,8 +136,8 @@ class ZonoState:
 		child = ZonoState(self.network_count, state=self)
 		pos, neg = self, child
 
-		pos.contract_domain(-row, bias, index, networks)
-		neg.contract_domain(row, -bias, index, networks)
+		pos.contract_domain(-row, bias, index, networks,self.layer_bounds.output_bounds[index,1])
+		neg.contract_domain(row, -bias, index, networks,-self.layer_bounds.output_bounds[index,0])
 		#pos.branching.append((self.cur_network, self.cur_layer, index, True))
 		#neg.branching.append((self.cur_network, self.cur_layer, index, False))
 		#neg.branching_precise[-1][index]=False
@@ -220,18 +220,19 @@ class ZonoState:
 			Timers.toc('is_finished')
 			return False
 
-	def check_feasible(self, networks):
+	def check_feasible(self, overflow, networks):
 		assert self.active
 		Timers.tic('is_feasible')
 		feasible = self.lpi.minimize(None,fail_on_unsat=False)
 		if feasible is None:
 			self.active=False
 			GLOBAL_STATE.WRONG+=1
-			GLOBAL_STATE.INVALID_DEPTH.append(self.depth)
+			GLOBAL_STATE.INVALID_DEPTH.append((overflow,self.depth))
 			GLOBAL_STATE.FINISHED_FRAC+=self.workload
 			Timers.toc('is_feasible')
 			return False
 		else:
+			GLOBAL_STATE.VALID_DEPTH_DECISION.append((overflow, self.depth))
 			Timers.toc('is_feasible')
 			return True
 

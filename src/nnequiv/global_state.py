@@ -5,6 +5,7 @@ class GlobalState:
 		self.FINISHED_FRAC = 0
 		self.VALID_DEPTH=[]
 		self.INVALID_DEPTH=[]
+		self.VALID_DEPTH_DECISION=[]
 
 
 GLOBAL_STATE = GlobalState()

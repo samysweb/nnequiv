@@ -48,8 +48,9 @@ class GracefulKiller:
 		print("\nEXITING...")
 		Timers.tocRec()
 		Timers.print_stats()
-		print(f"\n[INVALID_DEPTH] {str(GLOBAL_STATE.INVALID_DEPTH)}")
-		print(f"[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
+		print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")
+		print(f"\n[VALID_DEPTH_DECISION] {str(GLOBAL_STATE.VALID_DEPTH_DECISION)}")
+		print(f"\n[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
 		self.kill_now = True
 
 
@@ -68,5 +69,6 @@ def main_loop(manager : StateManager):
 		if counter%5000:
 			status_update()
 	status_update()
-	print(f"\n[INVALID_DEPTH] {str(GLOBAL_STATE.INVALID_DEPTH)}")
-	print(f"[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
+	print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")
+	print(f"\n[VALID_DEPTH_DECISION] {str(GLOBAL_STATE.VALID_DEPTH_DECISION)}")
+	print(f"\n[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
