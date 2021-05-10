@@ -212,17 +212,25 @@ class Zonotope(Freezable):
 
         #Timers.toc('loop')
 
-        if self.init_bounds_nparray is None:
-            self.init_bounds_nparray = np.array(self.init_bounds, dtype=self.dtype)
-
-        ib = self.init_bounds_nparray
-        
-        res = np.where(res_vec <= 0, ib[:, 1], ib[:, 0])
-
-        rv += res.dot(res_vec)
+        rv += self.minimize_box(res_vec)
 
         Timers.toc('zonotope.minimize_val')
 
+        return rv
+
+    def minimize_box(self, vector):
+        """
+        Minimize in init_bounds box in direction of vector
+        :param vector:
+        :return:
+        """
+        Timers.tic('zonotope.minimize_box')
+        if self.init_bounds_nparray is None:
+            self.init_bounds_nparray = np.array(self.init_bounds, dtype=self.dtype)
+        ib = self.init_bounds_nparray
+        res = np.where(vector <= 0, ib[:, 1], ib[:, 0])
+        rv = res.dot(vector)
+        Timers.toc('zonotope.minimize_box')
         return rv
 
     def box_bounds(self):
