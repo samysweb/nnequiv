@@ -104,7 +104,17 @@ class ZonoState:
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
 		Timers.toc('zono_state_from_state')
 
-	def contract_domain(self, row, bias, index, networks,overflow):
+	def split(self):
+		split_dim = self.split_heuristic.get_split()
+		copy_zono = ZonoState(self.network_count,state=self)
+		up = self.zono.init_bounds[split_dim][1]
+		low = self.zono.init_bounds[split_dim][0]
+		mid = low + (up-low)/2
+		self.zono.update_init_bounds(split_dim,(low,mid))
+		copy_zono.zono.update_init_bounds(split_dim, (mid,up))
+		return copy_zono, self
+
+	def contract_domain(self, row, bias, index, networks, overflow):
 		Timers.tic('zono_state_contract_domain')
 		tuple_list = self.zono.contract_domain(row,bias)
 		self.update_lp(row, bias, tuple_list)
@@ -122,6 +132,7 @@ class ZonoState:
 		Timers.toc('zono_state_update_lp')
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
+		#TODO(steuber): Maybe reorder: Only create child zono if feasible?
 		Timers.tic('do_first_relu_split')
 		network = networks[self.cur_network]
 		assert isinstance(network.layers[self.cur_layer], ReluLayer)
@@ -141,14 +152,16 @@ class ZonoState:
 		#pos.branching.append((self.cur_network, self.cur_layer, index, True))
 		#neg.branching.append((self.cur_network, self.cur_layer, index, False))
 		#neg.branching_precise[-1][index]=False
+		if neg.active:
+			neg.zono.mat_t[index] = 0.0
+			neg.zono.center[index] = 0.0
 
-		neg.zono.mat_t[index] = 0.0
-		neg.zono.center[index] = 0.0
-
-		neg.propagate_up_to_split(networks)
+			neg.propagate_up_to_split(networks)
+		else:
+			neg = None
 
 		Timers.toc('do_first_relu_split')
-		return neg
+		return neg, row, -bias, -row, bias
 
 	def propagate_layer(self, networks: [NeuralNetwork]):
 		Timers.tic('propagate_layer')
@@ -169,7 +182,6 @@ class ZonoState:
 
 	def propagate_up_to_split(self, networks: [NeuralNetwork]):
 		Timers.tic('propagate_up_to_split')
-		start_layer = self.cur_layer
 		while not self.is_finished(networks):
 			network = networks[self.cur_network]
 			layer = network.layers[self.cur_layer]
@@ -185,7 +197,6 @@ class ZonoState:
 				self.propagate_layer(networks)
 				self.next_layer()
 		Timers.toc('propagate_up_to_split')
-		return (start_layer!=self.cur_layer),self.zono.mat_t,self.zono.center
 
 	def set_to_zero(self, zeros):
 		Timers.tic('set_to_zero')
@@ -240,8 +251,11 @@ class ZonoState:
 def status_update():
 	Timers.tic('status_update')
 	if GLOBAL_STATE.FINISHED_FRAC>0:
+		total = GLOBAL_STATE.WRONG+GLOBAL_STATE.RIGHT
+		expected = int(total / GLOBAL_STATE.FINISHED_FRAC)
+		percentage = float(total)/float(expected)*100
 		print(
-		f"\rWrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {GLOBAL_STATE.WRONG + GLOBAL_STATE.RIGHT} | Expected {int((GLOBAL_STATE.WRONG + GLOBAL_STATE.RIGHT) / GLOBAL_STATE.FINISHED_FRAC)}",end="")
+		f"\rWrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Expected {expected} ({percentage}%)",end="")
 	Timers.toc('status_update')
 
 

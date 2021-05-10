@@ -64,7 +64,9 @@ def main_loop(manager : StateManager):
 			manager.check(cur_state)
 			manager.pop()
 		else:
-			manager.push(cur_state.advance_zono(manager.get_networks()))
+			newStackEl = cur_state.advance_zono(manager.get_networks())
+			if newStackEl is not None:
+				manager.push(newStackEl)
 		counter+=1
 		if counter%5000:
 			status_update()
