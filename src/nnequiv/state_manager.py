@@ -100,9 +100,8 @@ class StateManager:
 					# We found a counter-example -- that's it
 					return
 				else:
-					if refine:
-						refinement = Refinement(el, self.property, self.networks, self.enumeration_stack)
-						refinement.loop()
+					refinement = Refinement(el, self.property, self.networks, self.enumeration_stack)
+					refinement.loop()
 			else:
 				print(f"\n[EQUIV] {data[0]}\n")
 				return

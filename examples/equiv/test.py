@@ -23,9 +23,11 @@ def load_networks(net1File: str, net2File: str):
 
 
 def generateBox(inputShape, index):
-	assert len(inputShape) == 1, "Multidimensional inputs are not yet supported"
-	generator = np.identity(inputShape[0], dtype=np.float32)
-	bias = np.zeros(inputShape[0], dtype=np.float32)
+	# assert len(inputShape) == 1, f"Multidimensional inputs are not yet supported: {inputShape}"
+	inshape = np.prod(inputShape)
+	print(f"INPUT SHAPE: {inshape}")
+	generator = np.identity(inshape, dtype=np.float32)
+	bias = np.zeros(inshape, dtype=np.float32)
 	bounds = []
 	for i in range(len(PROPERTY[index][1])):
 		bounds.append((PROPERTY[index][1][i],PROPERTY[index][0][i]))
