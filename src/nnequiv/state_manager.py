@@ -22,6 +22,7 @@ class EnumerationStackElement:
 
 	def advance_zono(self, networks):
 		Timers.tic('advance_zono')
+		assert self.state.active
 		new_el = self.state.do_first_relu_split(networks)
 		if self.state.active:
 			self.state.propagate_up_to_split(networks)
@@ -89,6 +90,8 @@ class StateManager:
 			r2 = self.networks[1].execute(np.array(data[1],dtype=np.float32))
 			if not self.property.check_out(r1, r2):
 				print(f"\n[NEQUIV] {data[0]}\n")
+				print(r1)
+				print(r2)
 				# We found a counter-example -- that's it
 				Timers.toc('StateManager.valid_result')
 				return (True, False)
