@@ -59,16 +59,17 @@ def main_loop(manager : StateManager):
 	counter = 0
 	killer = GracefulKiller()
 	while not manager.done() and not killer.kill_now:
-		cur_state = manager.peek()
+		cur_state = manager.pop()
 		if cur_state.is_finished(manager.get_networks()):
 			if not manager.check(cur_state):
 				print(f"NETWORKS NOT EQUIVALENT")
 				break
-			manager.pop()
 		else:
 			newStackEl = cur_state.advance_zono(manager.get_networks())
-			if newStackEl is not None:
+			if newStackEl is not None and newStackEl.state.active:
 				manager.push(newStackEl)
+			if cur_state.state.active:
+				manager.push(cur_state)
 		counter+=1
 		if counter%5000:
 			status_update()

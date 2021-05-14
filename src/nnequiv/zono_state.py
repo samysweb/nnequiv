@@ -161,7 +161,7 @@ class ZonoState:
 			neg = None
 
 		Timers.toc('do_first_relu_split')
-		return neg, row, -bias, -row, bias
+		return neg
 
 	def propagate_layer(self, networks: [NeuralNetwork]):
 		Timers.tic('propagate_layer')
