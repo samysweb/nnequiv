@@ -1,5 +1,7 @@
 import copy
 
+import numpy as np
+
 from nnenum.network import NeuralNetwork
 from nnenum.timerutil import Timers
 from nnequiv.equivalence_properties import EquivalenceProperty
@@ -57,14 +59,16 @@ class StateManager:
 		self.enumeration_stack.append(el)
 
 	def check(self, el: EnumerationStackElement):
-		if el.state.active:
-			equiv, data = self.property.check(el.state)
+		Timers.tic('StateManager.check')
+		assert el.state.active
+		equiv, data = self.property.check(el.state)
+		valid, result = self.valid_result(el, equiv, data)
+		if not valid:
+			equiv, data = self.property.fallback_check(el.state)
 			valid, result = self.valid_result(el, equiv, data)
-			if not valid:
-				equiv, data = self.property.fallback_check(el.state)
-				valid, result = self.valid_result(el, equiv, data)
-				assert valid
-			return result
+			assert valid
+		Timers.toc('StateManager.check')
+		return result
 
 	def valid_result(self, el: EnumerationStackElement, equiv, data):
 		"""
@@ -75,19 +79,24 @@ class StateManager:
 		:return: A tuple rv. rv[0] is True iff the result by check is valid. rv[0] is true iff the result is valid and
 			equivalence was shown.
 		"""
+		Timers.tic('StateManager.valid_result')
 		GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
 		GLOBAL_STATE.RIGHT += 1
 		GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 		if not equiv:
-			r1 = self.networks[0].execute(data[1])
-			r2 = self.networks[1].execute(data[1])
+			# TODO(steuber): Make float types explicit?
+			r1 = self.networks[0].execute(np.array(data[1],dtype=np.float32))
+			r2 = self.networks[1].execute(np.array(data[1],dtype=np.float32))
 			if not self.property.check_out(r1, r2):
 				print(f"\n[NEQUIV] {data[0]}\n")
 				# We found a counter-example -- that's it
+				Timers.toc('StateManager.valid_result')
 				return (True, False)
 			else:
 				print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
 			print(f"\n[EQUIV] {data[0]}\n")
+			Timers.toc('StateManager.valid_result')
 			return (True, True)
