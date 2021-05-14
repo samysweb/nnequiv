@@ -61,7 +61,9 @@ def main_loop(manager : StateManager):
 	while not manager.done() and not killer.kill_now:
 		cur_state = manager.peek()
 		if cur_state.is_finished(manager.get_networks()):
-			manager.check(cur_state)
+			if not manager.check(cur_state):
+				print(f"NETWORKS NOT EQUIVALENT")
+				break
 			manager.pop()
 		else:
 			newStackEl = cur_state.advance_zono(manager.get_networks())

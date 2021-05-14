@@ -1,5 +1,6 @@
 import numpy as np
 
+from nnenum.lpinstance import LpInstance
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from .property import EquivalenceProperty
@@ -47,6 +48,24 @@ class EpsilonEquivalence(EquivalenceProperty):
 		else:
 			Timers.toc('check_epsilon')
 			return True, (eps, None)
+
+	def fallback_check(self, zono):
+		Timers.tic('check_epsilon_fallback')
+		mat = zono.output_zonos[0].mat_t - zono.output_zonos[1].mat_t
+		bias = zono.output_zonos[0].center - zono.output_zonos[1].center
+		max_eps = 0.0
+		for i in range(mat.shape[0]):
+			min_vec = zono.lpi.minimize(mat[i])
+			min_val = bias[i] + np.dot(mat[i],min_vec)
+			if min_val > self.epsilon or min_val < -self.epsilon:
+				return False, (min_val, min_vec)
+			max_vec = zono.lpi.minimize(-mat[i])
+			max_val = bias[i] + np.dot(mat[i], max_vec)
+			if max_val > self.epsilon or max_val < -self.epsilon:
+				return False, (max_val, max_vec)
+			max_eps = max(max_eps, abs(max_val), abs(min_val))
+		return True, (max_eps, None)
+		Timers.tic('check_epsilon_fallback')
 
 	def check_out(self, r1, r2):
 		return (np.abs(r1-r2)<self.epsilon).all()

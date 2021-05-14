@@ -86,22 +86,38 @@ class StateManager:
 	def push(self, el: EnumerationStackElement):
 		self.enumeration_stack.append(el)
 
-	def check(self, el: EnumerationStackElement, refine=True):
+	def check(self, el: EnumerationStackElement):
 		if el.state.active:
 			equiv, data = self.property.check(el.state)
-			GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
-			GLOBAL_STATE.RIGHT+=1
-			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
-			if not equiv:
-				r1 = self.networks[0].execute(data[1])
-				r2 = self.networks[1].execute(data[1])
-				if not self.property.check_out(r1,r2):
-					print(f"\n[NEQUIV] {data[0]}\n")
-					# We found a counter-example -- that's it
-					return
-				else:
-					refinement = Refinement(el, self.property, self.networks, self.enumeration_stack)
-					refinement.loop()
+			valid, result = self.valid_result(el, equiv, data)
+			if not valid:
+				equiv, data = self.property.fallback_check(el.state)
+				valid, result = self.valid_result(el, equiv, data)
+				assert valid
+			return result
+
+	def valid_result(self, el: EnumerationStackElement, equiv, data):
+		"""
+		Check whether result returned by property check is valid
+		:param el: The EnumerationStackElement that was checked
+		:param equiv: Whether the two networks were equivalent
+		:param data: The data returned by the check
+		:return: A tuple rv. rv[0] is True iff the result by check is valid. rv[0] is true iff the result is valid and
+			equivalence was shown.
+		"""
+		GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
+		GLOBAL_STATE.RIGHT += 1
+		GLOBAL_STATE.FINISHED_FRAC += el.state.workload
+		if not equiv:
+			r1 = self.networks[0].execute(data[1])
+			r2 = self.networks[1].execute(data[1])
+			if not self.property.check_out(r1, r2):
+				print(f"\n[NEQUIV] {data[0]}\n")
+				# We found a counter-example -- that's it
+				return (True, False)
 			else:
-				print(f"\n[EQUIV] {data[0]}\n")
-				return
+				print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				return (False, False)
+		else:
+			print(f"\n[EQUIV] {data[0]}\n")
+			return (True, True)
