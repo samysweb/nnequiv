@@ -10,6 +10,7 @@ from nnenum.zonotope import Zonotope
 from nnequiv.equivalence import check_equivalence
 from nnequiv.equivalence_properties import EpsilonEquivalence
 from nnenum.timerutil import Timers
+from nnequiv.equivalence_properties.top1 import Top1Equivalence
 
 from properties import PROPERTY
 
@@ -42,13 +43,19 @@ def main():
 	net1File = sys.argv[1]
 	net2File = sys.argv[2]
 	property = sys.argv[3]
-	epsilon = float(sys.argv[4])
 
 	network1, network2 = load_networks(net1File, net2File)
 
+	if sys.argv[4] == "top":
+		equivprop = Top1Equivalence()
+	else:
+		epsilon = float(sys.argv[4])
+		equivprop = EpsilonEquivalence(epsilon, networks=[network1,network2])
+
+
 	input = generateBox(network1.get_input_shape(),property)
 
-	check_equivalence(network1, network2, input, EpsilonEquivalence(epsilon, networks=[network1,network2]))
+	check_equivalence(network1, network2, input, equivprop)
 	print("")
 	Timers.print_stats()
 	print("")
