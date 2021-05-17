@@ -10,6 +10,44 @@ from nnenum.zonotope import Zonotope
 from nnequiv.global_state import GLOBAL_STATE
 
 
+class BranchDecision:
+	BOTH = 0
+	POS = 1
+	NEG = 2
+
+	def __init__(self, cur_network, cur_layer, index, decision):
+		self.cur_network = cur_network
+		self.cur_layer = cur_layer
+		self.index = index
+		self.decision = decision
+
+	def __repr__(self):
+		return str((self.cur_network, self.cur_layer, self.index, self.decision))
+
+	def __str__(self):
+		return self.__repr__()
+
+	def __lt__(self, other):
+		return self.cur_network < other.cur_network \
+		       or (self.cur_network == other.cur_network and self.cur_layer < other.cur_layer) \
+		       or (
+					       self.cur_network == other.cur_network and self.cur_layer == other.cur_layer and self.index < other.index)
+
+	def __gt__(self, other):
+		return not self.__lt__(other) and not self.__eq__(other)
+
+	def __eq__(self, other):
+		return self.cur_network==other.cur_network and self.cur_layer==other.cur_layer and self.index==other.index
+
+
+class OverapproxNode:
+	def __init__(self, cur_network, cur_layer, index, coefficient_index):
+		self.cur_network = cur_network
+		self.cur_layer = cur_layer
+		self.index = index
+		self.coefficient_index = coefficient_index
+
+
 class LayerBounds:
 	def __init__(self):
 		self.output_bounds = None
@@ -42,8 +80,9 @@ class LayerBounds:
 					self.output_bounds[self.branching_neurons, 1] < -Settings.SPLIT_TOLERANCE]
 
 			self.branching_neurons = \
-			np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
-			                          self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0] + start_with
+				np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
+				                          self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[
+					0] + start_with
 
 			if new_zeros is None:
 				new_zeros = np.nonzero(self.output_bounds[start_with:, 1] < -Settings.SPLIT_TOLERANCE)[0] + start_with
@@ -57,7 +96,7 @@ class LayerBounds:
 
 
 class ZonoState:
-	def __init__(self, network_count, state=None):
+	def __init__(self, network_count, state=None, branch_on=[]):
 		self.network_count = network_count
 		self.output_zonos = []
 		self.active = True
@@ -67,6 +106,9 @@ class ZonoState:
 		if state is not None:
 			self.from_state(state)
 			return
+		self.branch_on = branch_on
+		self.branching = []
+		self.overapprox_nodes = []
 		self.zono = None
 		self.cur_network = 0
 		self.cur_layer = 0
@@ -92,6 +134,9 @@ class ZonoState:
 	def from_state(self, state):
 		Timers.tic('zono_state_from_state')
 		self.zono = state.zono.deep_copy()
+		self.branch_on = copy.deepcopy(state.branch_on)
+		self.branching = copy.deepcopy(state.branching)
+		self.overapprox_nodes = copy.deepcopy(state.overapprox_nodes)
 		self.initial_zono = state.initial_zono.deep_copy()
 		self.cur_network = state.cur_network
 		self.cur_layer = state.cur_layer
@@ -129,14 +174,20 @@ class ZonoState:
 
 	def update_lp(self, row, bias, tuple_list):
 		Timers.tic('zono_state_update_lp')
-		self.lpi.add_dense_row(row, bias)
+		self.lpi.add_dense_row(row[:self.initial_zono.mat_t.shape[1]], bias)
 		for i, l, u in tuple_list:
-			self.lpi.set_col_bounds(i, l, u)
+			if i<self.initial_zono.mat_t.shape[1]:
+				self.lpi.set_col_bounds(i, l, u)
 		Timers.toc('zono_state_update_lp')
 
-	def do_overapprox(self):
-		# val = random.randint
-		return True
+	def do_overapprox(self, index):
+		cur_branch = BranchDecision(self.cur_network,self.cur_layer,index,None)
+		while len(self.branch_on) > 0 and self.branch_on[-1]<cur_branch:
+			self.branch_on.pop()
+		if len(self.branch_on) == 0 or (not self.branch_on[-1]==cur_branch):
+			return True
+		# We need to branch here.
+		return False
 
 	def overapprox(self, index, networks: [NeuralNetwork]):
 		row = self.zono.mat_t[index]
@@ -144,47 +195,59 @@ class ZonoState:
 		l, u = self.layer_bounds.output_bounds[index]
 		factor = u / (u - l)
 		new_dim_u = max(u * (-l) / (u - l), u * u / (u - l))
-		assert new_dim_u>0.0
-		self.zono.mat_t[index] = factor*row
-		self.zono.center[index] = factor*bias
+		assert new_dim_u > 0.0
+		self.zono.mat_t[index] = factor * row
+		self.zono.center[index] = factor * bias
 		dim = self.zono.add_dimension(0.0, new_dim_u)
-		self.zono.mat_t[index,dim] = 1.0
+		self.zono.mat_t[index, dim] = 1.0
+		self.overapprox_nodes.append(OverapproxNode(self.cur_network, self.cur_layer, index, dim))
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
 		# TODO(steuber): Maybe reorder: Only create child zono if feasible?
 		Timers.tic('do_first_relu_split')
 		network = networks[self.cur_network]
 		assert isinstance(network.layers[self.cur_layer], ReluLayer)
+		self.depth += 1
 
 		index = self.layer_bounds.pop_branch()
 		if index is None:
 			Timers.toc('do_first_relu_split')
 			return None
-		if self.do_overapprox():
+		if self.do_overapprox(index):
 			self.overapprox(index, networks)
 			Timers.toc('do_first_relu_split')
 			return None
+		branch_decision = self.branch_on.pop()
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
-		self.depth += 1
-		child = ZonoState(self.network_count, state=self)
-		pos, neg = self, child
+		if branch_decision.decision == BranchDecision.BOTH:
+			child = ZonoState(self.network_count, state=self)
+			pos, neg = self, child
 
-		pos.contract_domain(-row, bias, index, networks, self.layer_bounds.output_bounds[index, 1])
-		neg.contract_domain(row, -bias, index, networks, -self.layer_bounds.output_bounds[index, 0])
-		# pos.branching.append((self.cur_network, self.cur_layer, index, True))
-		# neg.branching.append((self.cur_network, self.cur_layer, index, False))
-		# neg.branching_precise[-1][index]=False
-		if neg.active:
+			pos.contract_domain(-row, bias, index, networks, self.layer_bounds.output_bounds[index, 1])
+			neg.contract_domain(row, -bias, index, networks, -self.layer_bounds.output_bounds[index, 0])
+			pos.branching.append(BranchDecision(self.cur_network, self.cur_layer, index, BranchDecision.POS))
+			neg.branching.append(BranchDecision(self.cur_network, self.cur_layer, index, BranchDecision.NEG))
+			if neg.active:
+				neg.zono.mat_t[index] = 0.0
+				neg.zono.center[index] = 0.0
+				neg.propagate_up_to_split(networks)
+				rv = neg
+			else:
+				rv = None
+		elif branch_decision.decision == BranchDecision.POS:
+			pos, rv = self, None
+			pos.contract_domain(-row, bias, index, networks, self.layer_bounds.output_bounds[index, 1])
+			pos.branching.append(BranchDecision(self.cur_network, self.cur_layer, index, BranchDecision.POS))
+		elif branch_decision.decision == BranchDecision.NEG:
+			neg, rv = self, None
+			neg.contract_domain(row, -bias, index, networks, -self.layer_bounds.output_bounds[index, 0])
+			neg.branching.append(BranchDecision(self.cur_network, self.cur_layer, index, BranchDecision.NEG))
 			neg.zono.mat_t[index] = 0.0
 			neg.zono.center[index] = 0.0
 
-			neg.propagate_up_to_split(networks)
-		else:
-			neg = None
-
 		Timers.toc('do_first_relu_split')
-		return neg
+		return rv
 
 	def propagate_layer(self, networks: [NeuralNetwork]):
 		Timers.tic('propagate_layer')
@@ -239,7 +302,7 @@ class ZonoState:
 			self.output_zonos[self.cur_network] = self.zono
 			new_zono = Zonotope(
 				self.initial_zono.center,
-				self.initial_zono.mat_t[:,:len(self.initial_zono.init_bounds)],
+				self.initial_zono.mat_t[:, :len(self.initial_zono.init_bounds)],
 				init_bounds=self.zono.init_bounds[:len(self.initial_zono.init_bounds)]
 			)
 			# new_in_star = self.initial_star.copy()
@@ -277,8 +340,11 @@ def status_update():
 		total = GLOBAL_STATE.WRONG + GLOBAL_STATE.RIGHT
 		expected = int(total / GLOBAL_STATE.FINISHED_FRAC)
 		percentage = float(total) / float(expected) * 100
+		tree_share=0.0
+		for x in GLOBAL_STATE.TREE_PARTS:
+			tree_share+=2**(np.log2(x)-np.log2(GLOBAL_STATE.MAX_DEPTH))
 		print(
-			f"\rWrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Expected {expected} ({percentage}%)",
+			f"\rWrong: {GLOBAL_STATE.WRONG} | Refined: {GLOBAL_STATE.NEED_REFINEMENT} | Right: {GLOBAL_STATE.RIGHT} | Total: {total+GLOBAL_STATE.NEED_REFINEMENT} | Expected {expected} ({percentage}%) | Tree Share {tree_share} (Depth {GLOBAL_STATE.MAX_DEPTH})",
 			end="")
 	Timers.toc('status_update')
 

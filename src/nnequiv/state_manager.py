@@ -62,14 +62,17 @@ class StateManager:
 	def check(self, el: EnumerationStackElement):
 		Timers.tic('StateManager.check')
 		assert el.state.active
+		GLOBAL_STATE.MAX_DEPTH=max(GLOBAL_STATE.MAX_DEPTH,el.state.depth)
 		equiv, data = self.property.check(el.state)
 		valid, result = self.valid_result(el, equiv, data)
 		if not valid:
 			equiv, data = self.property.fallback_check(el.state)
 			valid, result = self.valid_result(el, equiv, data)
 			if not valid:
-				# TODO(steuber): Add refinement
-				assert False
+				for next_zono in self.property.refine_resubmit(el, equiv, data):
+					next_zono.propagate_up_to_split(self.networks)
+					self.enumeration_stack.append(EnumerationStackElement(next_zono))
+				result = True
 		Timers.toc('StateManager.check')
 		return result
 
@@ -83,9 +86,6 @@ class StateManager:
 			equivalence was shown.
 		"""
 		Timers.tic('StateManager.valid_result')
-		GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
-		GLOBAL_STATE.RIGHT += 1
-		GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 		if not equiv:
 			# TODO(steuber): Make float types explicit?
 			r1 = self.networks[0].execute(np.array(data[1],dtype=np.float32))
@@ -95,13 +95,22 @@ class StateManager:
 				print(r1)
 				print(r2)
 				# We found a counter-example -- that's it
+				GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
+				GLOBAL_STATE.RIGHT += 1
+				GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 				Timers.toc('StateManager.valid_result')
 				return (True, False)
 			else:
-				print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				# print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				GLOBAL_STATE.NEED_REFINEMENT += 1
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
-			print(f"\n[EQUIV] {data[0]}\n")
+			print(f"\n[EQUIV] {data[0]}\n",end="")
+			print(f"[EQUIV_SUMMARIZES] {len(el.state.overapprox_nodes)}")
+			GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
+			GLOBAL_STATE.RIGHT += 1
+			GLOBAL_STATE.TREE_PARTS.append(len(el.state.overapprox_nodes))
+			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 			Timers.toc('StateManager.valid_result')
 			return (True, True)

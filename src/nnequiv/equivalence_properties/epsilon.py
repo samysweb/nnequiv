@@ -3,7 +3,7 @@ import numpy as np
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from .property import EquivalenceProperty
-from ..zono_state import ZonoState
+from ..zono_state import ZonoState, BranchDecision
 
 
 class EpsilonEquivalence(EquivalenceProperty):
@@ -60,25 +60,26 @@ class EpsilonEquivalence(EquivalenceProperty):
 				 zono.output_zonos[1].mat_t[:, self.input_size:]))
 			mat = mat0 - mat1
 			bias = zono.output_zonos[0].center - zono.output_zonos[1].center
-			init_bounds = np.concatenate((zono.output_zonos[1].init_bounds[:self.input_size] \
-				                              , zono.output_zonos[0].init_bounds[self.input_size:] \
-				                              , zono.output_zonos[1].init_bounds[self.input_size:]))
-
+			init_bounds = zono.output_zonos[1].init_bounds[:self.input_size]
+			if len(zono.output_zonos[0].init_bounds) > self.input_size:
+				init_bounds = np.concatenate((init_bounds, zono.output_zonos[0].init_bounds[self.input_size:]))
+			if len(zono.output_zonos[1].init_bounds) > self.input_size:
+				init_bounds = np.concatenate((init_bounds, zono.output_zonos[1].init_bounds[self.input_size:]))
 		else:
 			mat = zono.output_zonos[0].mat_t - zono.output_zonos[1].mat_t
 			bias = zono.output_zonos[0].center - zono.output_zonos[1].center
 			init_bounds = zono.output_zonos[1].init_bounds
 		return bias, init_bounds, mat
 
-	def compute_deviation(self, zono, vec, i, bias, mat, init_bounds,dev):
+	def compute_deviation(self, zono, vec, i, bias, mat, init_bounds, dev):
 		# TODO: THis is false, need to check influence through mat[i,...]
 		if self.input_size == zono.output_zonos[0].mat_t.shape[1] and self.input_size == \
 				zono.output_zonos[1].mat_t.shape[1]:
 			return bias[i] + np.dot(mat[i, :self.input_size], vec)
 		ib = np.array(init_bounds[self.input_size:], dtype=zono.zono.dtype)
-		vals = np.where(mat[i,self.input_size:] <= 0, ib[:, 1-dev], ib[:, dev])
-		invec = np.concatenate((vec,vals))
-		return bias[i]+np.dot(mat[i],invec)
+		vals = np.where(mat[i, self.input_size:] <= 0, ib[:, 1 - dev], ib[:, dev])
+		invec = np.concatenate((vec, vals))
+		return bias[i] + np.dot(mat[i], invec)
 
 	def fallback_check(self, zono):
 		Timers.tic('check_epsilon_fallback')
@@ -86,18 +87,40 @@ class EpsilonEquivalence(EquivalenceProperty):
 		max_eps = 0.0
 		for i in range(mat.shape[0]):
 			min_vec = zono.lpi.minimize(mat[i, :self.input_size])
-			min_val = self.compute_deviation(zono,min_vec,i,bias,mat,init_bounds,0)
+			min_val = self.compute_deviation(zono, min_vec, i, bias, mat, init_bounds, 0)
 			if min_val > self.epsilon or min_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
 				return False, (min_val, min_vec[:self.input_size])
 			max_vec = zono.lpi.minimize(-mat[i, :self.input_size])
-			max_val = self.compute_deviation(zono,min_vec,i,bias,mat,init_bounds,1)
+			max_val = self.compute_deviation(zono, min_vec, i, bias, mat, init_bounds, 1)
 			if max_val > self.epsilon or max_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
 				return False, (max_val, max_vec[:self.input_size])
 			max_eps = max(max_eps, abs(max_val), abs(min_val))
 		Timers.toc('check_epsilon_fallback')
 		return True, (max_eps, None)
+
+	def refine_resubmit(self, el, equiv, data):
+		bias, init_bounds, mat = self.build_out_zono(el.state)
+		vals = np.sum(np.abs(mat[:, self.input_size:]), axis=0)
+		max_index = np.argmax(vals)
+		# min_index = np.argmin(vals)
+		node = el.state.overapprox_nodes[max_index]
+		branches = []
+		added_node = False
+		new_branch_decision = BranchDecision(node.cur_network, node.cur_layer, node.index, BranchDecision.BOTH)
+		for branch in reversed(el.state.branching):
+			if branch < new_branch_decision \
+					and not added_node:
+				branches.append(new_branch_decision)
+				added_node = True
+			branches.append(branch)
+		if not added_node:
+			branches.append(new_branch_decision)
+		rv = ZonoState(el.state.network_count, branch_on=branches)
+		rv.workload = el.state.workload
+		rv.from_init_zono(el.state.initial_zono)
+		return [rv]
 
 	def check_out(self, r1, r2):
 		return (np.abs(r1 - r2) < self.epsilon).all()
