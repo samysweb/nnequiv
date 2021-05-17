@@ -90,8 +90,9 @@ class StateManager:
 			# TODO(steuber): Make float types explicit?
 			r1 = self.networks[0].execute(np.array(data[1],dtype=np.float32))
 			r2 = self.networks[1].execute(np.array(data[1],dtype=np.float32))
-			if not self.property.check_out(r1, r2):
-				print(f"\n[NEQUIV] {data[0]}\n")
+			found, nndata = self.property.check_out(r1, r2)
+			if not found:
+				print(f"\n[NEQUIV] {nndata}\n")
 				print(r1)
 				print(r2)
 				# We found a counter-example -- that's it
