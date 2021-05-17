@@ -1,4 +1,5 @@
 import copy
+
 import numpy as np
 
 from nnenum.lpinstance import LpInstance
@@ -32,18 +33,20 @@ class LayerBounds:
 		return rv
 
 	def process_layer(self, zono, start_with=0):
-		if self.output_bounds is None or start_with!=0:
+		if self.output_bounds is None or start_with != 0:
 			Timers.tic('layer_bounds_process_layer')
 			self.output_bounds = zono.box_bounds()
 			new_zeros = None
 			if self.branching_neurons is not None:
-				new_zeros = self.branching_neurons[self.output_bounds[self.branching_neurons,1]<-Settings.SPLIT_TOLERANCE]
+				new_zeros = self.branching_neurons[
+					self.output_bounds[self.branching_neurons, 1] < -Settings.SPLIT_TOLERANCE]
 
-			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
-		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
+			self.branching_neurons = \
+			np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
+			                          self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0] + start_with
 
 			if new_zeros is None:
-				new_zeros = np.nonzero(self.output_bounds[start_with:,1] < -Settings.SPLIT_TOLERANCE)[0]+start_with
+				new_zeros = np.nonzero(self.output_bounds[start_with:, 1] < -Settings.SPLIT_TOLERANCE)[0] + start_with
 			Timers.toc('layer_bounds_process_layer')
 			return new_zeros
 
@@ -69,13 +72,13 @@ class ZonoState:
 		self.cur_layer = 0
 		self.split_heuristic = None
 		self.lpi = None
-		#self.branching = []
+		# self.branching = []
 		self.initial_zono = None
 		self.layer_bounds = LayerBounds()
 		self.workload = 1.0
-		self.depth=0
-		#self.branching_precise=[]
+		self.depth = 0
 
+	# self.branching_precise=[]
 
 	def from_init_zono(self, init: Zonotope):
 		self.zono = init.deep_copy()
@@ -95,32 +98,32 @@ class ZonoState:
 		self.layer_bounds = LayerBounds()
 		self.split_heuristic = state.split_heuristic.copy()
 		self.lpi = LpInstance(other_lpi=state.lpi)
-		#self.branching = copy.copy(state.branching)
-		#self.branching_precise = copy.deepcopy(state.branching_precise)
-		state.workload/=2
-		self.workload=state.workload
-		self.depth=state.depth
+		# self.branching = copy.copy(state.branching)
+		# self.branching_precise = copy.deepcopy(state.branching_precise)
+		state.workload /= 2
+		self.workload = state.workload
+		self.depth = state.depth
 		for x in range(0, self.cur_network):
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
 		Timers.toc('zono_state_from_state')
 
 	def split(self):
 		split_dim = self.split_heuristic.get_split()
-		copy_zono = ZonoState(self.network_count,state=self)
+		copy_zono = ZonoState(self.network_count, state=self)
 		up = self.zono.init_bounds[split_dim][1]
 		low = self.zono.init_bounds[split_dim][0]
-		mid = low + (up-low)/2
-		self.zono.update_init_bounds(split_dim,(low,mid))
-		copy_zono.zono.update_init_bounds(split_dim, (mid,up))
+		mid = low + (up - low) / 2
+		self.zono.update_init_bounds(split_dim, (low, mid))
+		copy_zono.zono.update_init_bounds(split_dim, (mid, up))
 		return copy_zono, self
 
 	def contract_domain(self, row, bias, index, networks, overflow):
 		Timers.tic('zono_state_contract_domain')
-		tuple_list = self.zono.contract_domain(row,bias)
+		tuple_list = self.zono.contract_domain(row, bias)
 		self.update_lp(row, bias, tuple_list)
 		# TODO(steuber): How often should we really be doing this feasibilitiy this?
-		self.check_feasible(overflow,networks)
-		zeros = self.layer_bounds.process_layer(self.zono,start_with=index+1)
+		self.check_feasible(overflow, networks)
+		zeros = self.layer_bounds.process_layer(self.zono, start_with=index + 1)
 		self.set_to_zero(zeros)
 		Timers.toc('zono_state_contract_domain')
 
@@ -131,27 +134,47 @@ class ZonoState:
 			self.lpi.set_col_bounds(i, l, u)
 		Timers.toc('zono_state_update_lp')
 
+	def do_overapprox(self):
+		# val = random.randint
+		return True
+
+	def overapprox(self, index, networks: [NeuralNetwork]):
+		row = self.zono.mat_t[index]
+		bias = self.zono.center[index]
+		l, u = self.layer_bounds.output_bounds[index]
+		factor = u / (u - l)
+		new_dim_u = max(u * (-l) / (u - l), u * u / (u - l))
+		assert new_dim_u>0.0
+		self.zono.mat_t[index] = factor*row
+		self.zono.center[index] = factor*bias
+		dim = self.zono.add_dimension(0.0, new_dim_u)
+		self.zono.mat_t[index,dim] = 1.0
+
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
-		#TODO(steuber): Maybe reorder: Only create child zono if feasible?
+		# TODO(steuber): Maybe reorder: Only create child zono if feasible?
 		Timers.tic('do_first_relu_split')
 		network = networks[self.cur_network]
 		assert isinstance(network.layers[self.cur_layer], ReluLayer)
 
-		self.depth+=1
 		index = self.layer_bounds.pop_branch()
 		if index is None:
 			Timers.toc('do_first_relu_split')
 			return None
+		if self.do_overapprox():
+			self.overapprox(index, networks)
+			Timers.toc('do_first_relu_split')
+			return None
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
+		self.depth += 1
 		child = ZonoState(self.network_count, state=self)
 		pos, neg = self, child
 
-		pos.contract_domain(-row, bias, index, networks,self.layer_bounds.output_bounds[index,1])
-		neg.contract_domain(row, -bias, index, networks,-self.layer_bounds.output_bounds[index,0])
-		#pos.branching.append((self.cur_network, self.cur_layer, index, True))
-		#neg.branching.append((self.cur_network, self.cur_layer, index, False))
-		#neg.branching_precise[-1][index]=False
+		pos.contract_domain(-row, bias, index, networks, self.layer_bounds.output_bounds[index, 1])
+		neg.contract_domain(row, -bias, index, networks, -self.layer_bounds.output_bounds[index, 0])
+		# pos.branching.append((self.cur_network, self.cur_layer, index, True))
+		# neg.branching.append((self.cur_network, self.cur_layer, index, False))
+		# neg.branching_precise[-1][index]=False
 		if neg.active:
 			neg.zono.mat_t[index] = 0.0
 			neg.zono.center[index] = 0.0
@@ -171,8 +194,8 @@ class ZonoState:
 		Timers.tic('propagate_layer_transform')
 		layer.transform_zono(self.zono)
 		Timers.toc('propagate_layer_transform')
-		#self.branching_precise.append(np.array([]))
-		#self.branching_precise.append(np.array([True] * self.zono.mat_t.shape[0]))
+		# self.branching_precise.append(np.array([]))
+		# self.branching_precise.append(np.array([True] * self.zono.mat_t.shape[0]))
 		Timers.toc('propagate_layer')
 
 	def next_layer(self):
@@ -201,7 +224,7 @@ class ZonoState:
 	def set_to_zero(self, zeros):
 		Timers.tic('set_to_zero')
 		if zeros is not None:
-			#self.branching_precise[-1][zeros]=False
+			# self.branching_precise[-1][zeros]=False
 			self.zono.mat_t[zeros] = 0.0
 			self.zono.center[zeros] = 0.0
 		Timers.toc('set_to_zero')
@@ -216,8 +239,8 @@ class ZonoState:
 			self.output_zonos[self.cur_network] = self.zono
 			new_zono = Zonotope(
 				self.initial_zono.center,
-				self.initial_zono.mat_t,
-				init_bounds=self.zono.init_bounds
+				self.initial_zono.mat_t[:,:len(self.initial_zono.init_bounds)],
+				init_bounds=self.zono.init_bounds[:len(self.initial_zono.init_bounds)]
 			)
 			# new_in_star = self.initial_star.copy()
 			# new_in_star.lpi = LpInstance(self.star.lpi)
@@ -234,12 +257,12 @@ class ZonoState:
 	def check_feasible(self, overflow, networks):
 		assert self.active
 		Timers.tic('is_feasible')
-		feasible = self.lpi.minimize(None,fail_on_unsat=False)
+		feasible = self.lpi.minimize(None, fail_on_unsat=False)
 		if feasible is None:
-			self.active=False
-			GLOBAL_STATE.WRONG+=1
-			GLOBAL_STATE.INVALID_DEPTH.append((overflow,self.depth))
-			GLOBAL_STATE.FINISHED_FRAC+=self.workload
+			self.active = False
+			GLOBAL_STATE.WRONG += 1
+			GLOBAL_STATE.INVALID_DEPTH.append((overflow, self.depth))
+			GLOBAL_STATE.FINISHED_FRAC += self.workload
 			Timers.toc('is_feasible')
 			return False
 		else:
@@ -250,12 +273,13 @@ class ZonoState:
 
 def status_update():
 	Timers.tic('status_update')
-	if GLOBAL_STATE.FINISHED_FRAC>0:
-		total = GLOBAL_STATE.WRONG+GLOBAL_STATE.RIGHT
+	if GLOBAL_STATE.FINISHED_FRAC > 0:
+		total = GLOBAL_STATE.WRONG + GLOBAL_STATE.RIGHT
 		expected = int(total / GLOBAL_STATE.FINISHED_FRAC)
-		percentage = float(total)/float(expected)*100
+		percentage = float(total) / float(expected) * 100
 		print(
-		f"\rWrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Expected {expected} ({percentage}%)",end="")
+			f"\rWrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Expected {expected} ({percentage}%)",
+			end="")
 	Timers.toc('status_update')
 
 

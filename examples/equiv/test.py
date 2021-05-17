@@ -32,7 +32,7 @@ def generateBox(inputShape, index):
 	bounds = []
 	for i in range(len(PROPERTY[index][1])):
 		bounds.append((PROPERTY[index][1][i],PROPERTY[index][0][i]))
-	return Zonotope(bias, generator, init_bounds=bounds)
+	return Zonotope(bias, generator, init_bounds=bounds), inshape
 
 
 def main():
@@ -46,14 +46,14 @@ def main():
 
 	network1, network2 = load_networks(net1File, net2File)
 
+	input, input_size = generateBox(network1.get_input_shape(),property)
+
+
 	if sys.argv[4] == "top":
 		equivprop = Top1Equivalence()
 	else:
 		epsilon = float(sys.argv[4])
-		equivprop = EpsilonEquivalence(epsilon, networks=[network1,network2])
-
-
-	input = generateBox(network1.get_input_shape(),property)
+		equivprop = EpsilonEquivalence(epsilon, input_size, networks=[network1,network2])
 
 	check_equivalence(network1, network2, input, equivprop)
 	print("")

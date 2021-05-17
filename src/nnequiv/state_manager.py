@@ -67,7 +67,9 @@ class StateManager:
 		if not valid:
 			equiv, data = self.property.fallback_check(el.state)
 			valid, result = self.valid_result(el, equiv, data)
-			assert valid
+			if not valid:
+				# TODO(steuber): Add refinement
+				assert False
 		Timers.toc('StateManager.check')
 		return result
 

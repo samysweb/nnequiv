@@ -1,6 +1,5 @@
 import numpy as np
 
-from nnenum.lpinstance import LpInstance
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from .property import EquivalenceProperty
@@ -8,35 +7,34 @@ from ..zono_state import ZonoState
 
 
 class EpsilonEquivalence(EquivalenceProperty):
-	def __init__(self, epsilon, networks=[]):
+	def __init__(self, epsilon, input_size, networks=[]):
 		self.epsilon = epsilon
+		self.input_size = input_size
 
-	def check(self, zono : ZonoState):
+	def check(self, zono: ZonoState):
 		Timers.tic('check_epsilon')
-		mat = zono.output_zonos[0].mat_t - zono.output_zonos[1].mat_t
-		bias = zono.output_zonos[0].center - zono.output_zonos[1].center
-		out = Zonotope(bias, mat, zono.output_zonos[1].init_bounds)
+		bias, init_bounds, mat = self.build_out_zono(zono)
+		out = Zonotope(bias, mat, init_bounds)
 		final_bounds_orig = out.box_bounds()
-		outsize = mat.shape[0]
-		final_bounds=np.abs(final_bounds_orig)
+		final_bounds = np.abs(final_bounds_orig)
 		pos = np.argmax(final_bounds)
-		pos1=pos//2
-		pos2=pos%2
-		eps = final_bounds[pos1,pos2]
+		pos1 = pos // 2
+		pos2 = pos % 2
+		eps = final_bounds[pos1, pos2]
 		if eps > self.epsilon:
 			Timers.tic('check_epsilon_nonequiv_treatment')
 			rv = None
-			too_low=final_bounds_orig[:,1]<-self.epsilon
+			too_low = final_bounds_orig[:, 1] < -self.epsilon
 			if too_low.any():
 				# Definitely not equivalent!
-				pos1=too_low.nonzero()[0][0]
-				pos2=1
-			too_high=final_bounds_orig[:,0]>self.epsilon
+				pos1 = too_low.nonzero()[0][0]
+				pos2 = 1
+			too_high = final_bounds_orig[:, 0] > self.epsilon
 			if too_high.any():
-				pos1=too_high.nonzero()[0][0]
-				pos2=0
-			init_bounds_nparray = np.array(zono.output_zonos[1].init_bounds, dtype=zono.zono.dtype)
-			if pos2==0:
+				pos1 = too_high.nonzero()[0][0]
+				pos2 = 0
+			init_bounds_nparray = np.array(init_bounds, dtype=zono.zono.dtype)
+			if pos2 == 0:
 				# Return lower bound
 				rv = np.where(out.mat_t[pos1] <= 0, init_bounds_nparray[:, 1], init_bounds_nparray[:, 0])
 			else:
@@ -44,30 +42,62 @@ class EpsilonEquivalence(EquivalenceProperty):
 				rv = np.where(out.mat_t[pos1] <= 0, init_bounds_nparray[:, 0], init_bounds_nparray[:, 1])
 			Timers.toc('check_epsilon_nonequiv_treatment')
 			Timers.toc('check_epsilon')
-			return False, (eps,rv)
+			return False, (eps, rv[:self.input_size])
 		else:
 			Timers.toc('check_epsilon')
 			return True, (eps, None)
 
+	def build_out_zono(self, zono):
+		outdim = zono.output_zonos[1].mat_t.shape[0]
+		if self.input_size != zono.output_zonos[0].mat_t.shape[1] or self.input_size != \
+				zono.output_zonos[1].mat_t.shape[1]:
+			mat0 = np.hstack(
+				(zono.output_zonos[0].mat_t,
+				 np.zeros((outdim, zono.output_zonos[1].mat_t.shape[1] - self.input_size))))
+			mat1 = np.hstack(
+				(zono.output_zonos[1].mat_t[:, :self.input_size],
+				 np.zeros((outdim, zono.output_zonos[0].mat_t.shape[1] - self.input_size)),
+				 zono.output_zonos[1].mat_t[:, self.input_size:]))
+			mat = mat0 - mat1
+			bias = zono.output_zonos[0].center - zono.output_zonos[1].center
+			init_bounds = np.concatenate((zono.output_zonos[1].init_bounds[:self.input_size] \
+				                              , zono.output_zonos[0].init_bounds[self.input_size:] \
+				                              , zono.output_zonos[1].init_bounds[self.input_size:]))
+
+		else:
+			mat = zono.output_zonos[0].mat_t - zono.output_zonos[1].mat_t
+			bias = zono.output_zonos[0].center - zono.output_zonos[1].center
+			init_bounds = zono.output_zonos[1].init_bounds
+		return bias, init_bounds, mat
+
+	def compute_deviation(self, zono, vec, i, bias, mat, init_bounds,dev):
+		# TODO: THis is false, need to check influence through mat[i,...]
+		if self.input_size == zono.output_zonos[0].mat_t.shape[1] and self.input_size == \
+				zono.output_zonos[1].mat_t.shape[1]:
+			return bias[i] + np.dot(mat[i, :self.input_size], vec)
+		ib = np.array(init_bounds[self.input_size:], dtype=zono.zono.dtype)
+		vals = np.where(mat[i,self.input_size:] <= 0, ib[:, 1-dev], ib[:, dev])
+		invec = np.concatenate((vec,vals))
+		return bias[i]+np.dot(mat[i],invec)
+
 	def fallback_check(self, zono):
 		Timers.tic('check_epsilon_fallback')
-		mat = zono.output_zonos[0].mat_t - zono.output_zonos[1].mat_t
-		bias = zono.output_zonos[0].center - zono.output_zonos[1].center
+		bias, init_bounds, mat = self.build_out_zono(zono)
 		max_eps = 0.0
 		for i in range(mat.shape[0]):
-			min_vec = zono.lpi.minimize(mat[i])
-			min_val = bias[i] + np.dot(mat[i],min_vec)
+			min_vec = zono.lpi.minimize(mat[i, :self.input_size])
+			min_val = self.compute_deviation(zono,min_vec,i,bias,mat,init_bounds,0)
 			if min_val > self.epsilon or min_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
-				return False, (min_val, min_vec)
-			max_vec = zono.lpi.minimize(-mat[i])
-			max_val = bias[i] + np.dot(mat[i], max_vec)
+				return False, (min_val, min_vec[:self.input_size])
+			max_vec = zono.lpi.minimize(-mat[i, :self.input_size])
+			max_val = self.compute_deviation(zono,min_vec,i,bias,mat,init_bounds,1)
 			if max_val > self.epsilon or max_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
-				return False, (max_val, max_vec)
+				return False, (max_val, max_vec[:self.input_size])
 			max_eps = max(max_eps, abs(max_val), abs(min_val))
 		Timers.toc('check_epsilon_fallback')
 		return True, (max_eps, None)
 
 	def check_out(self, r1, r2):
-		return (np.abs(r1-r2)<self.epsilon).all()
+		return (np.abs(r1 - r2) < self.epsilon).all()
