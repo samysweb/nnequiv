@@ -181,15 +181,18 @@ class ZonoState:
 		Timers.toc('zono_state_update_lp')
 
 	def do_overapprox(self, index):
+		Timers.tic('do_overapprox')
 		cur_branch = BranchDecision(self.cur_network,self.cur_layer,index,None)
 		while len(self.branch_on) > 0 and self.branch_on[-1]<cur_branch:
 			self.branch_on.pop()
 		if len(self.branch_on) == 0 or (not self.branch_on[-1]==cur_branch):
+			Timers.toc('do_overapprox')
 			return True
-		# We need to branch here.
+		Timers.toc('do_overapprox')
 		return False
 
 	def overapprox(self, index, networks: [NeuralNetwork]):
+		Timers.tic('overapprox')
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
 		l, u = self.layer_bounds.output_bounds[index]
@@ -201,6 +204,7 @@ class ZonoState:
 		dim = self.zono.add_dimension(0.0, new_dim_u)
 		self.zono.mat_t[index, dim] = 1.0
 		self.overapprox_nodes.append(OverapproxNode(self.cur_network, self.cur_layer, index, dim))
+		Timers.toc('overapprox')
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
 		# TODO(steuber): Maybe reorder: Only create child zono if feasible?

@@ -48,6 +48,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 			return True, (eps, None)
 
 	def build_out_zono(self, zono):
+		Timers.tic('build_out_zono')
 		outdim = zono.output_zonos[1].mat_t.shape[0]
 		if self.input_size != zono.output_zonos[0].mat_t.shape[1] or self.input_size != \
 				zono.output_zonos[1].mat_t.shape[1]:
@@ -70,16 +71,20 @@ class EpsilonEquivalence(EquivalenceProperty):
 			mat = zono.output_zonos[0].mat_t - zono.output_zonos[1].mat_t
 			bias = zono.output_zonos[0].center - zono.output_zonos[1].center
 			init_bounds = zono.output_zonos[1].init_bounds
+		Timers.toc('build_out_zono')
 		return bias, init_bounds, mat
 
 	def compute_deviation(self, zono, vec, i, bias, mat, init_bounds, dev):
+		Timers.tic('compute_deviation')
 		if self.input_size == zono.output_zonos[0].mat_t.shape[1] and self.input_size == \
 				zono.output_zonos[1].mat_t.shape[1]:
+			Timers.toc('compute_deviation')
 			return bias[i] + np.dot(mat[i, :self.input_size], vec)
 		ib = np.array(init_bounds[self.input_size:], dtype=zono.zono.dtype)
 		vals = np.where(mat[i, self.input_size:] <= 0, ib[:, 1 - dev], ib[:, dev])
 		invec = np.concatenate((vec, vals))
 		rv = bias[i] + np.dot(mat[i], invec)
+		Timers.toc('compute_deviation')
 		return rv
 
 	def fallback_check(self, zono):
@@ -102,6 +107,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 		return True, (max_eps, None)
 
 	def refine_resubmit(self, el, equiv, data):
+		Timers.tic('refine_resubmit')
 		bias, init_bounds, mat = self.build_out_zono(el.state)
 		vals = np.sum(np.abs(mat[:, self.input_size:]), axis=0)
 		max_index = np.argmax(vals)
@@ -121,6 +127,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 		rv = ZonoState(el.state.network_count, branch_on=branches)
 		rv.workload = el.state.workload
 		rv.from_init_zono(el.state.initial_zono)
+		Timers.toc('refine_resubmit')
 		return [rv]
 
 	def check_out(self, r1, r2):

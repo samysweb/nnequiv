@@ -61,6 +61,9 @@ def main_loop(manager : StateManager):
 	while not manager.done() and not killer.kill_now:
 		cur_state = manager.pop()
 		if cur_state.is_finished(manager.get_networks()):
+			if not cur_state.state.check_feasible(None, None):
+				print(f"Skipping infeasible output")
+				continue
 			if not manager.check(cur_state):
 				print(f"NETWORKS NOT EQUIVALENT")
 				break

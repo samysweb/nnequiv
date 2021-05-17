@@ -69,10 +69,12 @@ class StateManager:
 			equiv, data = self.property.fallback_check(el.state)
 			valid, result = self.valid_result(el, equiv, data)
 			if not valid:
+				Timers.tic('StateManager.check.refine')
 				for next_zono in self.property.refine_resubmit(el, equiv, data):
 					next_zono.propagate_up_to_split(self.networks)
 					self.enumeration_stack.append(EnumerationStackElement(next_zono))
 				result = True
+				Timers.toc('StateManager.check.refine')
 		Timers.toc('StateManager.check')
 		return result
 
