@@ -109,10 +109,10 @@ class EpsilonEquivalence(EquivalenceProperty):
 	def refine_resubmit(self, el, equiv, data):
 		Timers.tic('refine_resubmit')
 		bias, init_bounds, mat = self.build_out_zono(el.state)
-		vals = np.sum(np.abs(mat[:, self.input_size:]), axis=0)
-		max_index = np.argmax(vals)
+		# vals = np.sum(np.abs(mat[:, self.input_size:]), axis=0)
+		# max_index = np.argmax(vals)
 		# min_index = np.argmin(vals)
-		node = el.state.overapprox_nodes[max_index]
+		node = el.state.overapprox_nodes[0]
 		branches = []
 		added_node = False
 		new_branch_decision = BranchDecision(node.cur_network, node.cur_layer, node.index, BranchDecision.BOTH)
