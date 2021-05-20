@@ -62,6 +62,9 @@ def main_loop(manager: StateManager):
 	killer = GracefulKiller()
 	while not manager.done() and not killer.kill_now:
 		cur_state = manager.pop()
+		if not cur_state.state.active:
+			print("Skipping inactive")
+			continue
 		if cur_state.is_finished(manager.get_networks()):
 			if not cur_state.state.check_feasible(None, None):
 				print(f"Skipping infeasible output")

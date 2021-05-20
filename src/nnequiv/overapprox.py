@@ -119,7 +119,7 @@ class EgoZonoState(OverapproxZonoState):
 		assert self.overapprox_mode
 		print("[refine] larger scope failed...")
 		self.fallback.overapprox_mode=False
-		Timers.tic('ego_refine')
+		Timers.toc('ego_refine')
 		return [self.fallback]
 
 	def produce_cache_state(self, bounds):
@@ -137,7 +137,7 @@ class EgoZonoState(OverapproxZonoState):
 			rv.output_zonos[x] = self.output_zonos[x].deep_copy()
 		rv.layer_bounds = bounds
 		rv.lpi = LpInstance(other_lpi=self.lpi)
-		Timers.tic('ego_cache_state')
+		Timers.toc('ego_cache_state')
 		return rv
 
 	def do_first_relu_split(self, networks: [NeuralNetwork], branch_decision=None, index=None):
@@ -164,6 +164,7 @@ class EgoZonoState(OverapproxZonoState):
 	def wrap_up(self):
 		Timers.tic('ego_wrap_up')
 		if len(self.ego_cache)==0:
+			Timers.toc('ego_wrap_up')
 			return []
 		node = self.ego_cache.pop()
 		rv = node.zono_state
