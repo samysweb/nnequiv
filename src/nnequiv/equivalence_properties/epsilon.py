@@ -67,7 +67,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 				Timers.toc('check_epsilon_fallback')
 				return False, (min_val, min_vec[:self.input_size])
 			max_vec = zono.lpi.minimize(-mat[i])
-			max_val = np.dot(min_vec, mat[i])  # self.compute_deviation(zono, max_vec, i, bias, mat, init_bounds, 1)
+			max_val = np.dot(max_vec, mat[i])  # self.compute_deviation(zono, max_vec, i, bias, mat, init_bounds, 1)
 			if max_val > self.epsilon or max_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
 				return False, (max_val, max_vec[:self.input_size])
