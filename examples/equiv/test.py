@@ -1,17 +1,16 @@
+import logging
 import sys
 
 import numpy as np
-import logging
 
-from nnenum.lp_star import LpStar
 from nnenum.onnx_network import load_onnx_network
 from nnenum.settings import Settings
+from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from nnequiv.equivalence import check_equivalence
 from nnequiv.equivalence_properties import EpsilonEquivalence
-from nnenum.timerutil import Timers
 from nnequiv.equivalence_properties.top1 import Top1Equivalence
-
+from nnequiv.refinement_strategies import RefineMax, RefineFirst
 from properties import PROPERTY
 
 logging.basicConfig(level=logging.INFO)
@@ -31,7 +30,7 @@ def generateBox(inputShape, index):
 	bias = np.zeros(inshape, dtype=np.float32)
 	bounds = []
 	for i in range(len(PROPERTY[index][1])):
-		bounds.append((PROPERTY[index][1][i],PROPERTY[index][0][i]))
+		bounds.append((PROPERTY[index][1][i], PROPERTY[index][0][i]))
 	return Zonotope(bias, generator, init_bounds=bounds), inshape
 
 
@@ -46,20 +45,20 @@ def main():
 
 	network1, network2 = load_networks(net1File, net2File)
 
-	input, input_size = generateBox(network1.get_input_shape(),property)
-
+	input, input_size = generateBox(network1.get_input_shape(), property)
 
 	if sys.argv[4] == "top":
 		equivprop = Top1Equivalence(input_size)
+		strategy = RefineFirst()
 	else:
 		epsilon = float(sys.argv[4])
-		equivprop = EpsilonEquivalence(epsilon, input_size, networks=[network1,network2])
+		equivprop = EpsilonEquivalence(epsilon, input_size, networks=[network1, network2])
+		strategy = RefineMax()
 
-	check_equivalence(network1, network2, input, equivprop)
+	check_equivalence(network1, network2, input, equivprop, strategy)
 	print("")
 	Timers.print_stats()
 	print("")
-
 
 
 if __name__ == "__main__":

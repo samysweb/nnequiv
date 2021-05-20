@@ -6,7 +6,6 @@ from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from nnequiv.global_state import GLOBAL_STATE
 from nnequiv.overapprox import CegarZonoState
-from nnequiv.refinement_strategies import RefineFirst
 from nnequiv.state_manager import StateManager
 from nnequiv.zono_state import status_update
 
@@ -20,7 +19,7 @@ def make_init_zs(init, networks):
 	return zono_state
 
 
-def check_equivalence(network1: NeuralNetwork, network2: NeuralNetwork, input: Zonotope, equiv):
+def check_equivalence(network1: NeuralNetwork, network2: NeuralNetwork, input: Zonotope, equiv, strategy):
 	Timers.reset()
 	if not Settings.TIMING_STATS:
 		Timers.disable()
@@ -33,7 +32,7 @@ def check_equivalence(network1: NeuralNetwork, network2: NeuralNetwork, input: Z
 	networks = [network1, network2]
 	init = make_init_zs(input, networks)
 
-	manager = StateManager(init, equiv, networks, RefineFirst())
+	manager = StateManager(init, equiv, networks, strategy)
 
 	main_loop(manager)
 
