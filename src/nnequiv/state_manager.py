@@ -1,12 +1,10 @@
-import copy
-
 import numpy as np
 
 from nnenum.network import NeuralNetwork
 from nnenum.timerutil import Timers
 from nnequiv.equivalence_properties import EquivalenceProperty
 from nnequiv.global_state import GLOBAL_STATE
-from nnequiv.refinement import Refinement
+from nnequiv.refinement_strategies import RefinementStrategy
 from nnequiv.zono_state import ZonoState
 
 
@@ -17,7 +15,7 @@ class EnumerationStackElement:
 	def get_state(self):
 		return self.state
 
-	def is_finished(self,networks):
+	def is_finished(self, networks):
 		return self.state.is_finished(networks)
 
 	def advance_zono(self, networks):
@@ -35,9 +33,11 @@ class EnumerationStackElement:
 
 
 class StateManager:
-	def __init__(self, init: ZonoState, property: EquivalenceProperty, networks: [NeuralNetwork]):
+	def __init__(self, init: ZonoState, property: EquivalenceProperty, networks: [NeuralNetwork],
+	             strategy: RefinementStrategy):
 		self.enumeration_stack = [EnumerationStackElement(init)]
 		self.property = property
+		self.strategy = strategy
 		self.networks = networks
 
 	def get_networks(self):
@@ -62,7 +62,7 @@ class StateManager:
 	def check(self, el: EnumerationStackElement):
 		Timers.tic('StateManager.check')
 		assert el.state.active
-		GLOBAL_STATE.MAX_DEPTH=max(GLOBAL_STATE.MAX_DEPTH,el.state.depth)
+		GLOBAL_STATE.MAX_DEPTH = max(GLOBAL_STATE.MAX_DEPTH, el.state.depth)
 		equiv, data = self.property.check(el.state)
 		valid, result = self.valid_result(el, equiv, data)
 		if not valid:
@@ -70,7 +70,9 @@ class StateManager:
 			valid, result = self.valid_result(el, equiv, data)
 			if not valid:
 				Timers.tic('StateManager.check.refine')
-				for next_zono in self.property.refine_resubmit(el, equiv, data):
+				assert el.state.allows_refinement()
+				refinement_index = self.strategy.get_index(el.state, self.property, equiv, data)
+				for next_zono in el.state.refine(refinement_index):
 					next_zono.propagate_up_to_split(self.networks)
 					self.enumeration_stack.append(EnumerationStackElement(next_zono))
 				result = True
@@ -90,8 +92,8 @@ class StateManager:
 		Timers.tic('StateManager.valid_result')
 		if not equiv:
 			# TODO(steuber): Make float types explicit?
-			r1 = self.networks[0].execute(np.array(data[1],dtype=np.float32))
-			r2 = self.networks[1].execute(np.array(data[1],dtype=np.float32))
+			r1 = self.networks[0].execute(np.array(data[1], dtype=np.float32))
+			r2 = self.networks[1].execute(np.array(data[1], dtype=np.float32))
 			found, nndata = self.property.check_out(r1, r2)
 			if not found:
 				print(f"\n[NEQUIV] {nndata}\n")
@@ -109,11 +111,12 @@ class StateManager:
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
-			print(f"\n[EQUIV] {data[0]}\n",end="")
-			print(f"[EQUIV_SUMMARIZES] {len(el.state.overapprox_nodes)}")
+			print(f"\n[EQUIV] {data[0]}\n", end="")
 			GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
 			GLOBAL_STATE.RIGHT += 1
-			GLOBAL_STATE.TREE_PARTS.append(len(el.state.overapprox_nodes))
+			if hasattr(el.state, "overapprox_nodes"):
+				print(f"[EQUIV_SUMMARIZES] {len(el.state.overapprox_nodes)}")
+				GLOBAL_STATE.TREE_PARTS.append(len(el.state.overapprox_nodes))
 			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 			Timers.toc('StateManager.valid_result')
 			return (True, True)

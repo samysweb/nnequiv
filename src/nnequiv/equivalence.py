@@ -5,19 +5,22 @@ from nnenum.settings import Settings
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from nnequiv.global_state import GLOBAL_STATE
+from nnequiv.overapprox import CegarZonoState
+from nnequiv.refinement_strategies import RefineFirst
 from nnequiv.state_manager import StateManager
-from nnequiv.zono_state import ZonoState, status_update
+from nnequiv.zono_state import status_update
 
 
 def make_init_zs(init, networks):
-	zono_state = ZonoState(len(networks))
+	zono_state = CegarZonoState(len(networks))
 	zono_state.from_init_zono(init)
 
 	zono_state.propagate_up_to_split(networks)
 
 	return zono_state
 
-def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input : Zonotope, equiv):
+
+def check_equivalence(network1: NeuralNetwork, network2: NeuralNetwork, input: Zonotope, equiv):
 	Timers.reset()
 	if not Settings.TIMING_STATS:
 		Timers.disable()
@@ -30,21 +33,21 @@ def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input 
 	networks = [network1, network2]
 	init = make_init_zs(input, networks)
 
-	manager = StateManager(init, equiv, networks)
+	manager = StateManager(init, equiv, networks, RefineFirst())
 
 	main_loop(manager)
 
 	Timers.toc('network_equivalence')
 
 
-
 class GracefulKiller:
 	kill_now = False
+
 	def __init__(self):
 		signal.signal(signal.SIGINT, self.exit_gracefully)
 		signal.signal(signal.SIGTERM, self.exit_gracefully)
 
-	def exit_gracefully(self,signum, frame):
+	def exit_gracefully(self, signum, frame):
 		print("\nEXITING...")
 		Timers.tocRec()
 		Timers.print_stats()
@@ -54,8 +57,7 @@ class GracefulKiller:
 		self.kill_now = True
 
 
-
-def main_loop(manager : StateManager):
+def main_loop(manager: StateManager):
 	counter = 0
 	killer = GracefulKiller()
 	while not manager.done() and not killer.kill_now:
@@ -73,8 +75,8 @@ def main_loop(manager : StateManager):
 				manager.push(newStackEl)
 			if cur_state.state.active:
 				manager.push(cur_state)
-		counter+=1
-		if counter%5000==1:
+		counter += 1
+		if counter % 5000 == 1:
 			status_update()
 	status_update()
 	print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")

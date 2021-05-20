@@ -50,7 +50,7 @@ def main():
 
 
 	if sys.argv[4] == "top":
-		equivprop = Top1Equivalence()
+		equivprop = Top1Equivalence(input_size)
 	else:
 		epsilon = float(sys.argv[4])
 		equivprop = EpsilonEquivalence(epsilon, input_size, networks=[network1,network2])
