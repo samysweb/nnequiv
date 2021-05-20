@@ -5,13 +5,14 @@ from nnenum.settings import Settings
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from nnequiv.global_state import GLOBAL_STATE
-from nnequiv.overapprox import CegarZonoState
+from nnequiv.overapprox import CegarZonoState, EgoZonoState
 from nnequiv.state_manager import StateManager
 from nnequiv.zono_state import status_update
 
 
 def make_init_zs(init, networks):
-	zono_state = CegarZonoState(len(networks))
+	#zono_state = CegarZonoState(len(networks))
+	zono_state = EgoZonoState(len(networks))
 	zono_state.from_init_zono(init)
 
 	zono_state.propagate_up_to_split(networks)
