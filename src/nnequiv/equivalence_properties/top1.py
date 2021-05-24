@@ -28,7 +28,10 @@ class Top1Equivalence(EquivalenceProperty):
 			for k in range(mat0.shape[0]):
 				if k == j:
 					continue
-				lp.add_dense_row(current_mat0[k], -current_bias0[k])
+				if np.any(current_mat0[k]):
+					lp.add_dense_row(current_mat0[k], -current_bias0[k])
+				else:
+					print(f"[TOP1_CHECK] Skipping row {k}")
 			if not lp.is_feasible():
 				continue
 			current_bias1 = bias1 - bias1[j]
