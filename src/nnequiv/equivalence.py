@@ -11,8 +11,8 @@ from nnequiv.zono_state import status_update
 
 
 def make_init_zs(init, networks):
-	#zono_state = CegarZonoState(len(networks))
-	zono_state = EgoZonoState(len(networks))
+	zono_state = CegarZonoState(len(networks))
+	#zono_state = EgoZonoState(len(networks))
 	zono_state.from_init_zono(init)
 
 	zono_state.propagate_up_to_split(networks)
