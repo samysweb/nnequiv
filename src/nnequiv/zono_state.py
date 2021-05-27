@@ -115,7 +115,7 @@ class ZonoState:
 	def allows_refinement(self):
 		return False
 
-	def refine(self):
+	def refine(self, refine_index):
 		assert False
 
 	def from_init_zono(self, init: Zonotope, set_initial=True):
@@ -189,7 +189,7 @@ class ZonoState:
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
 		if branch_decision is None or branch_decision.decision == BranchDecision.BOTH:
-			child = self.getChild()
+			child = self.get_child()
 			pos, neg = self, child
 
 			pos.contract_domain(-row, bias, index, networks, self.layer_bounds.output_bounds[index, 1])
@@ -217,7 +217,7 @@ class ZonoState:
 		Timers.toc('do_first_relu_split')
 		return rv
 
-	def getChild(self):
+	def get_child(self):
 		return ZonoState(self.network_count, state=self)
 
 	def propagate_layer(self, networks: [NeuralNetwork]):
@@ -306,6 +306,9 @@ class ZonoState:
 			GLOBAL_STATE.VALID_DEPTH_DECISION.append((overflow, self.depth))
 			Timers.toc('is_feasible')
 			return True
+
+	def wrap_up(self):
+		return []
 
 
 def status_update():

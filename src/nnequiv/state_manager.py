@@ -73,11 +73,14 @@ class StateManager:
 				assert el.state.allows_refinement()
 				refinement_index = self.strategy.get_index(el.state, self.property, equiv, data)
 				for next_zono in el.state.refine(refinement_index):
+					GLOBAL_STATE.NEED_REFINEMENT += 1
 					next_zono.propagate_up_to_split(self.networks)
 					self.enumeration_stack.append(EnumerationStackElement(next_zono))
 				result = True
 				Timers.toc('StateManager.check.refine')
 		Timers.toc('StateManager.check')
+		if equiv:
+			self.wrap_up(el)
 		return result
 
 	def valid_result(self, el: EnumerationStackElement, equiv, data):
@@ -107,7 +110,6 @@ class StateManager:
 				return (True, False)
 			else:
 				# print(f"\n[NEED_FALLBACK] {data[0]}\n")
-				GLOBAL_STATE.NEED_REFINEMENT += 1
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
@@ -120,3 +122,9 @@ class StateManager:
 			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 			Timers.toc('StateManager.valid_result')
 			return (True, True)
+
+	def wrap_up(self, el : EnumerationStackElement):
+		# Last chance for "old" zono to add further more zonos...
+		for next_zono in el.state.wrap_up():
+			next_zono.propagate_up_to_split(self.networks)
+			self.enumeration_stack.append(EnumerationStackElement(next_zono))
