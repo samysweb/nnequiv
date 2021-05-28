@@ -31,7 +31,7 @@ def get_lp_params(alternate_lp_params=False):
 
         params.tm_lim = int(Settings.GLPK_TIMEOUT * 1000)
         params.out_dly = 2 * 1000 # start printing to terminal delay
-        
+
         get_lp_params.obj = params
 
         # make alternative params
@@ -42,9 +42,9 @@ def get_lp_params(alternate_lp_params=False):
 
         params2.tm_lim = int(Settings.GLPK_TIMEOUT * 1000)
         params2.out_dly = 1 * 1000 # start printing to terminal status after 1 secs
-        
+
         get_lp_params.alt_obj = params2
-        
+
     if alternate_lp_params:
         #glpk.glp_term_out(glpk.GLP_ON)
         rv = get_lp_params.alt_obj
@@ -63,7 +63,7 @@ class LpInstance(Freezable):
         'initialize the lp instance'
 
         self.lp = glpk.glp_create_prob() # pylint: disable=invalid-name
-        
+
         if other_lpi is None:
             # internal bookkeeping
             self.names = [] # column names
@@ -72,7 +72,7 @@ class LpInstance(Freezable):
         else:
             # initialize from other lpi
             self.names = other_lpi.names.copy()
-                
+
             Timers.tic('glp_copy_prob')
             glpk.glp_copy_prob(self.lp, other_lpi.lp, glpk.GLP_OFF)
             Timers.toc('glp_copy_prob')
@@ -84,7 +84,7 @@ class LpInstance(Freezable):
 
             if not isinstance(self.lp, tuple):
                 glpk.glp_delete_prob(self.lp)
-                
+
             self.lp = None
 
     def serialize(self):
@@ -111,10 +111,10 @@ class LpInstance(Freezable):
                 glpk_indices.append(inds_row[i])
 
             indptr.append(len(data))
-            
+
         # rhs
         rhs = []
-        
+
         for row in range(lp_rows):
             assert glpk.glp_get_row_type(self.lp, row + 1) == glpk.GLP_UP
 
@@ -149,7 +149,7 @@ class LpInstance(Freezable):
 
         # column lower and upper bounds
         col_bounds = []
-        
+
         for col in range(lp_cols):
             col_type = glpk.glp_get_col_type(self.lp, col + 1)
 
@@ -211,6 +211,11 @@ class LpInstance(Freezable):
 
         Timers.toc('deserialize')
 
+    def compute_residual(self, alpha_row, bounds):
+        min_factors = np.where(alpha_row <= 0, bounds[:, 1], bounds[:, 0])
+        alpha_min = min_factors.dot(alpha_row)
+        return alpha_min
+
     def _column_names_str(self):
         'get the line in __str__ for the column names'
 
@@ -231,7 +236,7 @@ class LpInstance(Freezable):
             rv += name + " "
 
         rv += "\n"
-        
+
         return rv
 
     def _opt_dir_str(self, zero_print):
@@ -246,14 +251,14 @@ class LpInstance(Freezable):
 
             num = f"{val:.6f}"
             num = num.rjust(6)[:6] # fix width to exactly 6
-            
+
             if val == 0:
                 rv += zero_print(num) + " "
             else:
                 rv += num + " "
 
         rv += "\n"
-        
+
         return rv
 
     def _col_stat_str(self):
@@ -279,7 +284,7 @@ class LpInstance(Freezable):
         lp = self.lp
         rows = self.get_num_rows()
         cols = self.get_num_cols()
-        
+
         stat_labels = ["?(0)?", "BS", "NL", "NU", "NF", "NS"]
         inds = SwigArray.get_int_array(cols + 1)
         vals = SwigArray.get_double_array(cols + 1)
@@ -367,7 +372,7 @@ class LpInstance(Freezable):
         rv += self._col_stat_str()
 
         rv += self._constraints_str(zero_print)
-        
+
         rv += self._var_bounds_str()
 
         return rv
@@ -545,7 +550,7 @@ class LpInstance(Freezable):
             row_type = glpk.glp_get_row_type(self.lp, row + 1)
 
             assert row_type == glpk.GLP_UP, "Error: Unsupported type ({}) in getRhs() in row {}".format(row_type, row)
-            
+
             limit = glpk.glp_get_row_ub(self.lp, row + 1)
             rv.append(limit)
 
@@ -590,7 +595,7 @@ class LpInstance(Freezable):
         csr_mat.check_format()
 
         return csr_mat
-        
+
     def is_feasible(self):
         '''check if the lp is feasible
 
@@ -628,7 +633,7 @@ class LpInstance(Freezable):
 
         assert len(direction) == self.get_num_cols(), f"expected {self.get_num_cols()} cols, but optimization " + \
             f"vector had {len(direction)} variables"
-        
+
         for i, d in enumerate(direction):
             col = int(1 + i)
 
@@ -662,7 +667,7 @@ class LpInstance(Freezable):
 
         if Settings.GLPK_RESET_BEFORE_MINIMIZE:
             self.reset_basis()
-        
+
         start = time.perf_counter()
         simplex_res = glpk.glp_exact(self.lp, get_lp_params())
 
@@ -682,7 +687,7 @@ class LpInstance(Freezable):
             print(f"result with reset  ({simplex_res}) {round(diff, 3)} sec")
 
             print("Retrying with reset + alternate GLPK settings")
-                    
+
             # retry with alternate params
             params = get_lp_params(alternate_lp_params=True)
             self.reset_basis()
@@ -690,13 +695,13 @@ class LpInstance(Freezable):
             simplex_res = glpk.glp_simplex(self.lp, params)
             diff = time.perf_counter() - start
             print(f"result with reset & alternate settings ({simplex_res}) {round(diff, 3)} sec")
-            
+
         rv = self._process_simplex_result(simplex_res)
 
         if rv is None and fail_on_unsat:
             # extra logic to try harder if fail_on_unsafe is True
             # glpk can sometimes be cajoled into providing a solution
-            
+
             print("Note: minimize failed with fail_on_unsat was true, trying to reset basis...")
 
             self.reset_basis()
@@ -705,16 +710,16 @@ class LpInstance(Freezable):
             if rv is None:
                 print("still unsat after reset basis, trying no-dir optimization")
                 self.reset_basis()
-            
+
                 result_nodir = self.minimize(None, fail_on_unsat=False)
 
                 # lp became infeasible when I picked an optimization direction
                 if result_nodir is not None:
-                    print("Using result from no-direction optimization") 
+                    print("Using result from no-direction optimization")
                     rv = result_nodir
                 else:
                     print("Error: No-dir result was also infeasible!")
-                    
+
                     if self.get_num_rows() < 50 and self.get_num_cols() < 50:
                         print(f"{self}")
             else:
@@ -736,7 +741,7 @@ class LpInstance(Freezable):
             "Unable to start the search, because the initial basis specified " + \
             "in the problem object is invalid-the number of basic (auxiliary " + \
             "and structural) variables is not the same as the number of rows " + \
-            "in the problem object.", 
+            "in the problem object.",
 
             "Unable to start the search, because the basis matrix corresponding " + \
             "to the initial basis is singular within the working " + \
@@ -792,11 +797,11 @@ class LpInstance(Freezable):
         rv = None
 
         if simplex_res != glpk.GLP_ENOPFS:  # skip if no primal feasible w/ presolver
-            
+
             if simplex_res != 0: # simplex failed, report the error
                 raise RuntimeError("glp_simplex returned nonzero status ({}): {}".format(
                     simplex_res, LpInstance.get_simplex_error_string(simplex_res)))
-            
+
             status = glpk.glp_get_status(self.lp)
 
             if status == glpk.GLP_NOFEAS: # infeasible
@@ -810,7 +815,7 @@ class LpInstance(Freezable):
 
             else: # neither infeasible nor optimal (for example, unbounded)
                 error_msg = "<Unknown Status>"
-                
+
                 codes = [glpk.GLP_OPT, glpk.GLP_FEAS, glpk.GLP_INFEAS, glpk.GLP_NOFEAS, glpk.GLP_UNBND, glpk.GLP_UNDEF]
                 msgs = ["solution is optimal",
                         "solution is feasible",
@@ -884,7 +889,7 @@ class SwigArray():
 
         for i, val in enumerate(list_data):
             arr[i+1] = float(val)
-            
+
         return arr
 
     @classmethod
