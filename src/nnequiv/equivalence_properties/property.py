@@ -1,5 +1,7 @@
 import numpy as np
 
+from nnenum.timerutil import Timers
+
 
 class EquivalenceProperty:
 	def check(self, zono):
@@ -25,6 +27,9 @@ class EquivalenceProperty:
 		:param r2: Output Vector 2
 		:return: True iff the property holds for r1 and r2
 		"""
+		pass
+
+	def has_fallback(self, zono):
 		pass
 
 	def compute_deviation(self, vec, bias, mat_row, init_bounds, minmax, dtype):
