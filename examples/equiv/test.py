@@ -54,7 +54,7 @@ def main():
 		epsilon = float(sys.argv[4])
 		equivprop = EpsilonEquivalence(epsilon, input_size, networks=[network1, network2])
 		#strategy = RefineSmear()
-		strategy = RefineFirst()
+		strategy = RefineMax()
 
 	check_equivalence(network1, network2, input, equivprop, strategy)
 	print("")
