@@ -65,19 +65,19 @@ class StateManager:
 		GLOBAL_STATE.MAX_DEPTH = max(GLOBAL_STATE.MAX_DEPTH, el.state.depth)
 		equiv, data = self.property.check(el.state)
 		valid, result = self.valid_result(el, equiv, data)
-		if not valid:
+		if not valid and self.property.has_fallback(el.state):
 			equiv, data = self.property.fallback_check(el.state)
 			valid, result = self.valid_result(el, equiv, data)
-			if not valid:
-				Timers.tic('StateManager.check.refine')
-				assert el.state.allows_refinement()
-				refinement_index = self.strategy.get_index(el.state, self.property, equiv, data)
-				for next_zono in el.state.refine(refinement_index):
-					GLOBAL_STATE.NEED_REFINEMENT += 1
-					next_zono.propagate_up_to_split(self.networks)
-					self.enumeration_stack.append(EnumerationStackElement(next_zono))
-				result = True
-				Timers.toc('StateManager.check.refine')
+		if not valid:
+			Timers.tic('StateManager.check.refine')
+			assert el.state.allows_refinement()
+			refinement_index = self.strategy.get_index(el.state, self.property, equiv, data)
+			for next_zono in el.state.refine(refinement_index):
+				GLOBAL_STATE.NEED_REFINEMENT += 1
+				next_zono.propagate_up_to_split(self.networks)
+				self.enumeration_stack.append(EnumerationStackElement(next_zono))
+			result = True
+			Timers.toc('StateManager.check.refine')
 		Timers.toc('StateManager.check')
 		if equiv:
 			self.wrap_up(el)

@@ -23,3 +23,6 @@ class EquivalenceProperty:
 		:return: True iff the property holds for r1 and r2
 		"""
 		pass
+
+	def has_fallback(self, state):
+		pass

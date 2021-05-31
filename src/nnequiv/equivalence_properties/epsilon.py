@@ -47,6 +47,9 @@ class EpsilonEquivalence(EquivalenceProperty):
 			Timers.toc('check_epsilon')
 			return True, (eps, None)
 
+	def has_fallback(self, state):
+		return True
+
 	def build_out_zono(self, zono):
 		Timers.tic('build_out_zono')
 		outdim = zono.output_zonos[1].mat_t.shape[0]
