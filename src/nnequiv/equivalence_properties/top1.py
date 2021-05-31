@@ -14,7 +14,7 @@ class Top1Equivalence(EquivalenceProperty):
 	def check(self, zono: ZonoState):
 		return self.fallback_check(zono)
 
-	def has_fallback(self, state):
+	def has_fallback(self, zono):
 		return False
 
 	def fallback_check(self, zono):
@@ -23,6 +23,7 @@ class Top1Equivalence(EquivalenceProperty):
 		mat1 = zono.output_zonos[1].mat_t
 		bias0 = zono.output_zonos[0].center
 		bias1 = zono.output_zonos[1].center
+		ib = np.array(zono.output_zonos[1].init_bounds, dtype=zono.output_zonos[1].dtype)
 		for j in range(mat0.shape[0]):
 			lp = LpInstance(other_lpi=zono.lpi)
 			# print(f"Trying {j}: ", end="")
@@ -32,7 +33,8 @@ class Top1Equivalence(EquivalenceProperty):
 				if k == j:
 					continue
 				if np.any(current_mat0[k]):
-					lp.add_dense_row(current_mat0[k], -current_bias0[k])
+					alpha_min = lp.compute_residual(current_mat0[k,self.input_size:], ib[self.input_size:])
+					lp.add_dense_row(current_mat0[k,:self.input_size], -current_bias0[k]-alpha_min)
 				else:
 					print(f"[TOP1_CHECK] Skipping row {k}")
 			if not lp.is_feasible():
@@ -42,8 +44,8 @@ class Top1Equivalence(EquivalenceProperty):
 			for k in range(mat1.shape[0]):
 				# if k==j:
 				# 	continue
-				max_vec = lp.minimize(-current_mat1[k])
-				max_val = current_bias1[k] + np.dot(current_mat1[k], max_vec)
+				max_vec = lp.minimize(-current_mat1[k,:self.input_size])
+				max_val = self.compute_deviation(max_vec, current_bias1[k], current_mat1[k],ib,1, zono.zono.dtype)
 				if max_val > 0:
 					Timers.toc('check_top1_fallback')
 					return False, (k, max_vec[:self.input_size])

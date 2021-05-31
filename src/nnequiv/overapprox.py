@@ -80,6 +80,11 @@ class OverapproxZonoState(ZonoState):
 			Timers.toc('is_finished')
 			return False
 
+	def check_feasible(self, overflow, networks):
+		# Only do check if finished
+		if self.network_count <= self.cur_network:
+			return super().check_feasible(overflow, networks)
+
 	def overapprox(self, index, networks: [NeuralNetwork]):
 		Timers.tic('overapprox')
 		row = np.array(self.zono.mat_t[index])
@@ -91,10 +96,22 @@ class OverapproxZonoState(ZonoState):
 		self.zono.mat_t[index] = factor * row
 		self.zono.center[index] = factor * bias
 		dim = self.zono.add_dimension(0.0, new_dim_u)
-		self.lpi.add_double_bounded_cols([f"i{dim}"], 0.0, new_dim_u)
 		self.zono.mat_t[index, dim] = 1.0
 		self.overapprox_nodes.append(OverapproxNode(self.cur_network, self.cur_layer, index, dim, row, factor, bias))
 		Timers.toc('overapprox')
+
+	def update_lp(self, row, bias, tuple_list):
+		Timers.tic('overapprox_zono_state_update_lp')
+		lp_col_num = self.lpi.get_num_cols()
+		lp_row = row[:lp_col_num]
+		alpha_row = row[lp_col_num:]
+		ib = np.array(self.zono.init_bounds, dtype=self.zono.dtype)
+		alpha_min = self.lpi.compute_residual(alpha_row, ib[lp_col_num:])
+		self.lpi.add_dense_row(lp_row, bias-alpha_min)
+		for i, l, u in tuple_list:
+			if i < lp_col_num:
+				self.lpi.set_col_bounds(i, float(l), float(u))
+		Timers.toc('overapprox_zono_state_update_lp')
 
 class EgoCacheNode:
 	def __init__(self, zono_state, fallback):

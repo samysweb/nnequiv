@@ -63,11 +63,11 @@ def main_loop(manager: StateManager):
 	while not manager.done() and not killer.kill_now:
 		cur_state = manager.pop()
 		if not cur_state.state.active:
-			print("Skipping inactive")
+			# print("Skipping inactive")
 			continue
 		if cur_state.is_finished(manager.get_networks()):
 			if not cur_state.state.check_feasible(None, None):
-				print(f"Skipping infeasible output")
+				# print(f"Skipping infeasible output")
 				continue
 			if not manager.check(cur_state):
 				print(f"NETWORKS NOT EQUIVALENT")
@@ -79,7 +79,7 @@ def main_loop(manager: StateManager):
 			if cur_state.state.active:
 				manager.push(cur_state)
 		counter += 1
-		if counter % 100 == 1:
+		if counter % 10000 == 1:
 			status_update()
 	status_update()
 	print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")
