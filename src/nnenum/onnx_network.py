@@ -19,6 +19,8 @@ from nnenum.network import nn_unflatten, nn_flatten
 from nnenum.settings import Settings
 
 from nnenum.util import Freezable
+from nnenum.zonotope import Zonotope
+
 
 class LinearOnnxSubnetworkLayer(Freezable):
     '''a linear layer consisting of multiple onnx operators
@@ -64,7 +66,19 @@ class LinearOnnxSubnetworkLayer(Freezable):
         self.zero_output = self.sess.run(None, input_map)[0]
         self.output_shape = self.zero_output.shape
 
+        inputsize = np.prod(shape)
+        outputsize = np.prod(self.output_shape)
+        zono = Zonotope(np.zeros((inputsize,), dtype=self.dtype), np.identity(inputsize, dtype=self.dtype))
+        self.transform_zono(zono)
+        self.mat = zono.mat_t
+        self.bias = zono.center
         self.freeze_attrs()
+
+    def getMatMul(self, prev_layer_output_shape=None):
+        return MatMulLayer(self.layer_num,self.mat,prev_layer_output_shape=prev_layer_output_shape)
+
+    def getAdd(self):
+        return AddLayer(self.layer_num+1, self.bias)
 
     def __str__(self):
         return f'[LinearOnnxSubnetworkLayer with input {self.get_input_shape()} and output {self.get_output_shape()}]'
@@ -784,10 +798,14 @@ def load_onnx_network(filename):
             submodel = stan_select_model_inputs_outputs(model, dtype, prev_input, end_node, io_shapes)
 
             l = LinearOnnxSubnetworkLayer(len(layers), submodel)
-            layers.append(l)
+            output_shape = None
+            if len(layers)>0:
+                output_shape=layers[-1].get_output_shape()
+            layers.append(l.getMatMul(prev_layer_output_shape=output_shape))
+            layers.append(l.getAdd())
 
         end_shape = io_shapes[end_node]
-        l = ReluLayer(len(layers), end_shape)
+        l = ReluLayer(len(layers), layers[-1].get_output_shape())
         layers.append(l)
         
         prev_input = r.output[0]
@@ -802,7 +820,11 @@ def load_onnx_network(filename):
         submodel = stan_select_model_inputs_outputs(model, dtype, prev_input, end_node, io_shapes)
 
         l = LinearOnnxSubnetworkLayer(len(layers), submodel)
-        layers.append(l)
+        output_shape = None
+        if len(layers)>0:
+            output_shape=layers[-1].get_output_shape()
+        layers.append(l.getMatMul(prev_layer_output_shape=output_shape))
+        layers.append(l.getAdd())
 
     return NeuralNetwork(layers)
     
