@@ -79,7 +79,7 @@ def main_loop(manager: StateManager):
 			if cur_state.state.active:
 				manager.push(cur_state)
 		counter += 1
-		if counter % 10000 == 1:
+		if counter % 100 == 1:
 			status_update()
 	status_update()
 	print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")

@@ -42,7 +42,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 				rv = np.where(out.mat_t[pos1] <= 0, init_bounds_nparray[:, 0], init_bounds_nparray[:, 1])
 			Timers.toc('check_epsilon_nonequiv_treatment')
 			Timers.toc('check_epsilon')
-			return False, (eps, rv[:self.input_size])
+			return False, (eps, rv)
 		else:
 			Timers.toc('check_epsilon')
 			return True, (eps, None)
@@ -68,12 +68,12 @@ class EpsilonEquivalence(EquivalenceProperty):
 			min_val = np.dot(min_vec, mat[i]) + bias[i]  # self.compute_deviation(zono, min_vec, i, bias, mat, init_bounds, 0)
 			if min_val > self.epsilon or min_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
-				return False, (min_val, min_vec[:self.input_size])
+				return False, (min_val, min_vec)
 			max_vec = zono.lpi.minimize(-mat[i])
 			max_val = np.dot(max_vec, mat[i]) + bias[i]  # self.compute_deviation(zono, max_vec, i, bias, mat, init_bounds, 1)
 			if max_val > self.epsilon or max_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
-				return False, (max_val, max_vec[:self.input_size])
+				return False, (max_val, max_vec)
 			max_eps = max(max_eps, abs(max_val), abs(min_val))
 		Timers.toc('check_epsilon_fallback')
 		return True, (max_eps, None)

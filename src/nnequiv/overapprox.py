@@ -1,4 +1,5 @@
 import copy
+from collections import Iterable
 
 import numpy as np
 
@@ -10,11 +11,14 @@ from nnequiv.zono_state import ZonoState, BranchDecision, LayerBounds
 
 
 class OverapproxNode:
-	def __init__(self, cur_network, cur_layer, index, coefficient_index):
+	def __init__(self, cur_network, cur_layer, index, coefficient_index, hyperplane, factor, bias):
 		self.cur_network = cur_network
 		self.cur_layer = cur_layer
 		self.index = index
 		self.coefficient_index = coefficient_index
+		self.factor = factor
+		self.hyperplane = hyperplane
+		self.bias = bias
 
 class OverapproxZonoState(ZonoState):
 	def __init__(self, network_count, state=None):
@@ -78,7 +82,7 @@ class OverapproxZonoState(ZonoState):
 
 	def overapprox(self, index, networks: [NeuralNetwork]):
 		Timers.tic('overapprox')
-		row = self.zono.mat_t[index]
+		row = np.array(self.zono.mat_t[index])
 		bias = self.zono.center[index]
 		l, u = self.layer_bounds.output_bounds[index]
 		factor = u / (u - l)
@@ -89,7 +93,7 @@ class OverapproxZonoState(ZonoState):
 		dim = self.zono.add_dimension(0.0, new_dim_u)
 		self.lpi.add_double_bounded_cols([f"i{dim}"], 0.0, new_dim_u)
 		self.zono.mat_t[index, dim] = 1.0
-		self.overapprox_nodes.append(OverapproxNode(self.cur_network, self.cur_layer, index, dim))
+		self.overapprox_nodes.append(OverapproxNode(self.cur_network, self.cur_layer, index, dim, row, factor, bias))
 		Timers.toc('overapprox')
 
 class EgoCacheNode:
@@ -184,19 +188,25 @@ class CegarZonoState(OverapproxZonoState):
 
 	def refine(self, refine_index):
 		Timers.tic('cegar_refine')
-		node = self.overapprox_nodes[refine_index]
-		branches = []
-		added_node = False
-		new_branch_decision = BranchDecision(node.cur_network, node.cur_layer, node.index, BranchDecision.BOTH)
-		for branch in reversed(self.branching):
-			if branch < new_branch_decision \
-					and not added_node:
-				branches.append(new_branch_decision)
-				added_node = True
-			branches.append(branch)
-		if not added_node:
-			branches.append(new_branch_decision)
-		rv = CegarZonoState(self.network_count, branch_on=branches)
+		nodes = self.branching
+		if isinstance(refine_index, Iterable):
+			for i in refine_index:
+				cur_node = self.overapprox_nodes[i]
+				nodes.append(BranchDecision(cur_node.cur_network, cur_node.cur_layer, cur_node.index, BranchDecision.BOTH))
+		else:
+			cur_node = self.overapprox_nodes[refine_index]
+			nodes.append(BranchDecision(cur_node.cur_network, cur_node.cur_layer, cur_node.index, BranchDecision.BOTH))
+		nodes.sort(reverse=True)
+		# branches = self.branching
+		# for branch in reversed(self.branching):
+		# 	if len(nodes)>0 and branch > nodes[-1]:
+		# 		branches.append(nodes.pop())
+		# 	branches.append(branch)
+		# if len(nodes)>0:
+		# 	for n in nodes:
+		# 		branches.append(n)
+		print(f"New branches: {nodes}")
+		rv = CegarZonoState(self.network_count, branch_on=nodes)
 		rv.workload = self.workload
 		rv.from_init_zono(self.initial_zono)
 		Timers.toc('cegar_refine')
@@ -220,6 +230,7 @@ class CegarZonoState(OverapproxZonoState):
 			return None
 		if branch_decision is None:
 			branch_decision = self.branch_on.pop()
+		print(f"Splitting on {branch_decision}")
 		return super().do_first_relu_split(networks, branch_decision=branch_decision, index=index)
 
 	def do_overapprox(self, index):

@@ -10,7 +10,7 @@ from nnenum.zonotope import Zonotope
 from nnequiv.equivalence import check_equivalence
 from nnequiv.equivalence_properties import EpsilonEquivalence
 from nnequiv.equivalence_properties.top1 import Top1Equivalence
-from nnequiv.refinement_strategies import RefineMax, RefineFirst
+from nnequiv.refinement_strategies import RefineMax, RefineFirst, RefineNewTopDown
 from properties import PROPERTY
 
 logging.basicConfig(level=logging.INFO)
@@ -54,7 +54,7 @@ def main():
 		epsilon = float(sys.argv[4])
 		equivprop = EpsilonEquivalence(epsilon, input_size, networks=[network1, network2])
 		#strategy = RefineSmear()
-		strategy = RefineMax()
+		strategy = RefineNewTopDown()
 
 	check_equivalence(network1, network2, input, equivprop, strategy)
 	print("")

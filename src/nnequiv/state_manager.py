@@ -95,8 +95,8 @@ class StateManager:
 		Timers.tic('StateManager.valid_result')
 		if not equiv:
 			# TODO(steuber): Make float types explicit?
-			r1 = self.networks[0].execute(np.array(data[1], dtype=np.float32))
-			r2 = self.networks[1].execute(np.array(data[1], dtype=np.float32))
+			r1 = self.networks[0].execute(np.array(data[1][:self.networks[0].get_num_inputs()], dtype=np.float32))
+			r2 = self.networks[1].execute(np.array(data[1][:self.networks[1].get_num_inputs()], dtype=np.float32))
 			found, nndata = self.property.check_out(r1, r2)
 			if not found:
 				print(f"\n[NEQUIV] {nndata}\n")
@@ -109,7 +109,7 @@ class StateManager:
 				Timers.toc('StateManager.valid_result')
 				return (True, False)
 			else:
-				# print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				print(f"\n[NEED_FALLBACK] {data[0]}\n")
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
