@@ -45,10 +45,10 @@ class Top1Equivalence(EquivalenceProperty):
 				# if k==j:
 				# 	continue
 				max_vec = lp.minimize(-current_mat1[k,:self.input_size])
-				max_val = self.compute_deviation(max_vec, current_bias1[k], current_mat1[k],ib,1, zono.zono.dtype)
+				max_val, max_vec = self.compute_deviation(max_vec, current_bias1[k], current_mat1[k],ib,1, zono.zono.dtype)
 				if max_val > 0:
 					Timers.toc('check_top1_fallback')
-					return False, (k, max_vec[:self.input_size])
+					return False, (k, max_vec)
 
 		Timers.toc('check_top1_fallback')
 		return True, (None, None)

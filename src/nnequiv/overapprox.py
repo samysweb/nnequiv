@@ -31,7 +31,7 @@ class OverapproxZonoState(ZonoState):
 
 	def from_state(self, state):
 		super().from_state(state)
-		self.overapprox_nodes = state.overapprox_nodes
+		self.overapprox_nodes = copy.deepcopy(state.overapprox_nodes)
 
 	def get_child(self):
 		pass
@@ -247,7 +247,7 @@ class CegarZonoState(OverapproxZonoState):
 			return None
 		if branch_decision is None:
 			branch_decision = self.branch_on.pop()
-		print(f"Splitting on {branch_decision}")
+		# print(f"Splitting on {branch_decision}")
 		return super().do_first_relu_split(networks, branch_decision=branch_decision, index=index)
 
 	def do_overapprox(self, index):

@@ -38,4 +38,5 @@ class EquivalenceProperty:
 		ib = np.array(init_bounds, dtype=dtype)
 		min_factors = np.where(alpha_row <= 0, ib[vec_size:, 1-minmax], ib[vec_size:, minmax])
 		alpha_dev = min_factors.dot(alpha_row)
-		return np.dot(vec, mat_row[:vec_size])+alpha_dev+bias
+		res_vec = np.concatenate((vec,min_factors))
+		return (np.dot(vec, mat_row[:vec_size])+alpha_dev+bias, res_vec)

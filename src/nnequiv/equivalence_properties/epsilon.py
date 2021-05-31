@@ -65,12 +65,12 @@ class EpsilonEquivalence(EquivalenceProperty):
 		max_eps = 0.0
 		for i in range(mat.shape[0]):
 			min_vec = zono.lpi.minimize(mat[i,:self.input_size])
-			min_val = self.compute_deviation(min_vec, bias[i], mat[i], init_bounds, 0, zono.zono.dtype)
+			min_val, min_vec = self.compute_deviation(min_vec, bias[i], mat[i], init_bounds, 0, zono.zono.dtype)
 			if min_val > self.epsilon or min_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
-				return False, (min_val, min_vec[:self.input_size])
+				return False, (min_val, min_vec)
 			max_vec = zono.lpi.minimize(-mat[i,:self.input_size])
-			max_val = self.compute_deviation(max_vec, bias[i], mat[i], init_bounds, 1, zono.zono.dtype)
+			max_val, max_vec = self.compute_deviation(max_vec, bias[i], mat[i], init_bounds, 1, zono.zono.dtype)
 			if max_val > self.epsilon or max_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
 				return False, (max_val, max_vec)
