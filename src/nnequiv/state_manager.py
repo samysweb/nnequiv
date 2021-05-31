@@ -65,7 +65,7 @@ class StateManager:
 		GLOBAL_STATE.MAX_DEPTH = max(GLOBAL_STATE.MAX_DEPTH, el.state.depth)
 		equiv, data = self.property.check(el.state)
 		valid, result = self.valid_result(el, equiv, data)
-		if not valid and self.property.has_fallback(el.state):
+		if not valid and self.property.has_fallback(el.state) and not el.state.allows_refinement():
 			equiv, data = self.property.fallback_check(el.state)
 			valid, result = self.valid_result(el, equiv, data)
 		if not valid:

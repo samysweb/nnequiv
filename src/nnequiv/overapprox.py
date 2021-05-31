@@ -76,6 +76,11 @@ class OverapproxZonoState(ZonoState):
 			Timers.toc('is_finished')
 			return False
 
+	def check_feasible(self, overflow, networks):
+		# Only do check if finished
+		if self.network_count <= self.cur_network:
+			return super().check_feasible(overflow, networks)
+
 	def overapprox(self, index, networks: [NeuralNetwork]):
 		Timers.tic('overapprox')
 		row = self.zono.mat_t[index]
