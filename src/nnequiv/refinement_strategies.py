@@ -49,7 +49,7 @@ class RefineNewTopDown(RefinementStrategy):
 		delta_change_abs = np.abs(delta_change)
 		delta_change_sorted = np.argsort(-delta_change_abs)
 		Timers.toc('refine_new_top_down_get_index')
-		return delta_change_sorted[:min(100,len(delta_change_sorted))]
+		return delta_change_sorted[:min(30,len(delta_change_sorted))]
 
 class RefineMax(RefinementStrategy):
 	def __init__(self):
