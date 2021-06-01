@@ -6,6 +6,7 @@ from nnenum.lpinstance import LpInstance
 from nnenum.network import NeuralNetwork
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
+from nnequiv.global_state import GLOBAL_STATE
 from nnequiv.zono_state import ZonoState, BranchDecision, LayerBounds
 
 
@@ -15,6 +16,12 @@ class OverapproxNode:
 		self.cur_layer = cur_layer
 		self.index = index
 		self.coefficient_index = coefficient_index
+
+	def __repr__(self):
+		return str((self.cur_network, self.cur_layer, self.index))
+
+	def __str__(self):
+		return self.__repr__()
 
 class OverapproxZonoState(ZonoState):
 	def __init__(self, network_count, state=None):
@@ -55,31 +62,34 @@ class OverapproxZonoState(ZonoState):
 			new_zono.init_bounds_nparray = None
 			# new_in_star = self.initial_star.copy()
 			# new_in_star.lpi = LpInstance(self.star.lpi)
+			if self.cur_network==0:
+				GLOBAL_STATE.PASSED_FIRST+=1
 			self.cur_network += 1
 			self.from_init_zono(new_zono, set_initial=False)
 
 		if self.network_count <= self.cur_network:
-			dim_count = self.output_zonos[-1].mat_t.shape[1]
-			for i in range(len(self.output_zonos) - 1):
-				missing_dims = dim_count - self.output_zonos[i].mat_t.shape[1]
-				if missing_dims > 0:
-					self.output_zonos[i].mat_t = np.pad(
-						self.output_zonos[i].mat_t,
-						((0, 0), (0, missing_dims))
-					)
-				self.output_zonos[i].pos1_gens = None
-				self.output_zonos[i].neg1_gens = None
-				self.output_zonos[i].init_bounds_nparray = None
 			Timers.toc('is_finished')
 			return True
 		else:
 			Timers.toc('is_finished')
 			return False
 
-	def check_feasible(self, overflow, networks):
-		# Only do check if finished
-		if self.network_count <= self.cur_network:
-			return super().check_feasible(overflow, networks)
+	def get_output_zonos(self):
+		rv_zonos = []
+		for zono in self.output_zonos:
+			rv_zonos.append(zono.deep_copy())
+		dim_count = rv_zonos[-1].mat_t.shape[1]
+		for i in range(len(rv_zonos) - 1):
+			missing_dims = dim_count - rv_zonos[i].mat_t.shape[1]
+			if missing_dims > 0:
+				rv_zonos[i].mat_t = np.pad(
+					rv_zonos[i].mat_t,
+					((0, 0), (0, missing_dims))
+				)
+			rv_zonos[i].pos1_gens = None
+			rv_zonos[i].neg1_gens = None
+			rv_zonos[i].init_bounds_nparray = None
+		return rv_zonos
 
 	def overapprox(self, index, networks: [NeuralNetwork]):
 		Timers.tic('overapprox')
@@ -198,6 +208,8 @@ class CegarZonoState(OverapproxZonoState):
 		super().__init__(network_count, state=state)
 		if state is None:
 			self.branch_on = branch_on
+			self.refinements_done=0
+			self.do_exact = False
 
 	def refine(self, refine_index):
 		Timers.tic('cegar_refine')
@@ -205,23 +217,36 @@ class CegarZonoState(OverapproxZonoState):
 		branches = []
 		added_node = False
 		new_branch_decision = BranchDecision(node.cur_network, node.cur_layer, node.index, BranchDecision.BOTH)
+		new_branching = []
+		while len(self.branching)>0 and self.branching[0].cur_network==0:
+			new_branching.append(self.branching.pop(0))
 		for branch in reversed(self.branching):
 			if branch < new_branch_decision \
 					and not added_node:
 				branches.append(new_branch_decision)
 				added_node = True
-			branches.append(branch)
+			if branch.cur_network!=0:
+				branches.append(branch)
 		if not added_node:
 			branches.append(new_branch_decision)
 		rv = CegarZonoState(self.network_count, branch_on=branches)
+		# TODO(steuber): Strategy by Bak here?
 		rv.workload = self.workload
 		rv.from_init_zono(self.initial_zono)
+		rv.cur_network=1
+		rv.output_zonos[0]=self.output_zonos[0].deep_copy()
+		rv.branching=new_branching
+		rv.refinements_done = self.refinements_done + 1
+		if GLOBAL_STATE.REFINEMENT_AVG_N > 200 and GLOBAL_STATE.REFINEMENT_AVG>1 and rv.refinements_done > 1.3 * GLOBAL_STATE.REFINEMENT_AVG:
+			rv.do_exact = True
 		Timers.toc('cegar_refine')
 		return [rv]
 
 	def from_state(self, state):
 		super().from_state(state)
 		self.branch_on = copy.deepcopy(state.branch_on)
+		self.refinements_done = state.refinements_done
+		self.do_exact = state.do_exact
 
 	def get_child(self):
 		return CegarZonoState(self.network_count, state=self)
@@ -245,7 +270,17 @@ class CegarZonoState(OverapproxZonoState):
 		while len(self.branch_on) > 0 and self.branch_on[-1] < cur_branch:
 			self.branch_on.pop()
 		if len(self.branch_on) == 0 or (not self.branch_on[-1] == cur_branch):
+			if self.cur_network==0 or self.do_exact:
+				cur_branch.decision = BranchDecision.BOTH
+				self.branch_on.append(cur_branch)
+				Timers.toc('do_overapprox')
+				return False
 			Timers.toc('do_overapprox')
 			return True
 		Timers.toc('do_overapprox')
 		return False
+
+	def check_feasible(self, overflow, networks):
+		# Only do check if finished
+		if self.cur_network == 0 or self.network_count <= self.cur_network or self.do_exact:
+			return super().check_feasible(overflow, networks)

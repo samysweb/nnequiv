@@ -79,9 +79,9 @@ def main_loop(manager: StateManager):
 			if cur_state.state.active:
 				manager.push(cur_state)
 		counter += 1
-		if counter % 10000 == 1:
-			status_update()
-	status_update()
-	print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")
-	print(f"\n[VALID_DEPTH_DECISION] {str(GLOBAL_STATE.VALID_DEPTH_DECISION)}")
-	print(f"\n[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
+		if counter % 100 == 1:
+			status_update(len(manager.enumeration_stack))
+	status_update(0)
+	#print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")
+	#print(f"\n[VALID_DEPTH_DECISION] {str(GLOBAL_STATE.VALID_DEPTH_DECISION)}")
+	#print(f"\n[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")

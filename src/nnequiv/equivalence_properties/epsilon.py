@@ -52,10 +52,11 @@ class EpsilonEquivalence(EquivalenceProperty):
 
 	def build_out_zono(self, zono):
 		Timers.tic('build_out_zono')
-		outdim = zono.output_zonos[1].mat_t.shape[0]
-		mat = zono.output_zonos[0].mat_t - zono.output_zonos[1].mat_t
-		bias = zono.output_zonos[0].center - zono.output_zonos[1].center
-		init_bounds = zono.output_zonos[1].init_bounds
+		output_zonos = zono.get_output_zonos()
+		outdim = output_zonos[1].mat_t.shape[0]
+		mat = output_zonos[0].mat_t - output_zonos[1].mat_t
+		bias = output_zonos[0].center - output_zonos[1].center
+		init_bounds = output_zonos[1].init_bounds
 		Timers.toc('build_out_zono')
 		return bias, init_bounds, mat
 

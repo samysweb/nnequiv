@@ -288,6 +288,10 @@ class ZonoState:
 			Timers.toc('is_finished')
 			return False
 
+	def get_output_zonos(self):
+		return self.output_zonos
+
+
 	def check_feasible(self, overflow, networks):
 		assert self.active
 		if self.lpi.get_num_rows()==0:
@@ -311,17 +315,15 @@ class ZonoState:
 		return []
 
 
-def status_update():
+def status_update(in_pipeline):
 	Timers.tic('status_update')
 	if GLOBAL_STATE.FINISHED_FRAC > 0:
 		total = GLOBAL_STATE.WRONG + GLOBAL_STATE.RIGHT
 		expected = int(total / GLOBAL_STATE.FINISHED_FRAC)
 		percentage = float(total) / float(expected) * 100
-		tree_share = 0.0
-		for x in GLOBAL_STATE.TREE_PARTS:
-			tree_share += 2 ** (np.log2(x) - np.log2(GLOBAL_STATE.MAX_DEPTH))
+		exact = GLOBAL_STATE.RIGHT-GLOBAL_STATE.OVERAPPOXED_RIGHT
 		print(
-			f"\rWrong: {GLOBAL_STATE.WRONG} | Refined: {GLOBAL_STATE.NEED_REFINEMENT} | Right: {GLOBAL_STATE.RIGHT} | Total: {total + GLOBAL_STATE.NEED_REFINEMENT} | Expected {expected} ({percentage}%) | Tree Share {tree_share} (Depth {GLOBAL_STATE.MAX_DEPTH})",
+			f"\rPassed First: {GLOBAL_STATE.PASSED_FIRST} | In Pipeline: {in_pipeline} | Refinement Avg: {GLOBAL_STATE.REFINEMENT_AVG} | Wrong: {GLOBAL_STATE.WRONG} | Refined: {GLOBAL_STATE.NEED_REFINEMENT} | Right: {GLOBAL_STATE.RIGHT}  (E: {exact}/O: {GLOBAL_STATE.OVERAPPOXED_RIGHT}) | Total Done: {total} | Expected {expected} ({percentage}%) (Depth {GLOBAL_STATE.MAX_DEPTH})",
 			end="")
 	Timers.toc('status_update')
 

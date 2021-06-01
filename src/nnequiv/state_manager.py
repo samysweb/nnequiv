@@ -109,16 +109,29 @@ class StateManager:
 				Timers.toc('StateManager.valid_result')
 				return (True, False)
 			else:
-				# print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				#print(data[1])
+				#print(r1)
+				#print(r2)
+				#print(f"\n[NEED_FALLBACK] {data[0]}\n")
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
-			print(f"\n[EQUIV] {data[0]}\n", end="")
+			#print(f"\n[EQUIV] {data[0]}\n", end="")
 			GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
 			GLOBAL_STATE.RIGHT += 1
-			if hasattr(el.state, "overapprox_nodes"):
-				print(f"[EQUIV_SUMMARIZES] {len(el.state.overapprox_nodes)}")
-				GLOBAL_STATE.TREE_PARTS.append(len(el.state.overapprox_nodes))
+			# if hasattr(el.state, "overapprox_nodes"):
+			# 	print(f"[EQUIV_SUMMARIZES] {len(el.state.overapprox_nodes)}")
+			if hasattr(el.state,"refinements_done") and not el.state.do_exact:
+				GLOBAL_STATE.OVERAPPOXED_RIGHT+=1
+				GLOBAL_STATE.REFINEMENT_AVG_N+=1
+				if GLOBAL_STATE.REFINEMENT_AVG is None:
+					GLOBAL_STATE.REFINEMENT_AVG=el.state.refinements_done
+				else:
+					GLOBAL_STATE.REFINEMENT_AVG=GLOBAL_STATE.REFINEMENT_AVG\
+					                            + (el.state.refinements_done - GLOBAL_STATE.REFINEMENT_AVG)\
+					                            / GLOBAL_STATE.REFINEMENT_AVG_N
+			# 	print(f"[BRACHED] {el.state.branching}")
+			# 	print(f"[OVERAPPROX] {el.state.overapprox_nodes}")
 			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 			Timers.toc('StateManager.valid_result')
 			return (True, True)

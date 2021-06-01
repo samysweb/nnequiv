@@ -19,11 +19,12 @@ class Top1Equivalence(EquivalenceProperty):
 
 	def fallback_check(self, zono):
 		Timers.tic('check_top1_fallback')
-		mat0 = zono.output_zonos[0].mat_t
-		mat1 = zono.output_zonos[1].mat_t
-		bias0 = zono.output_zonos[0].center
-		bias1 = zono.output_zonos[1].center
-		ib = np.array(zono.output_zonos[1].init_bounds, dtype=zono.output_zonos[1].dtype)
+		output_zonos = zono.get_output_zonos()
+		mat0 = output_zonos[0].mat_t
+		mat1 = output_zonos[1].mat_t
+		bias0 = output_zonos[0].center
+		bias1 = output_zonos[1].center
+		ib = np.array(output_zonos[1].init_bounds, dtype=output_zonos[1].dtype)
 		for j in range(mat0.shape[0]):
 			lp = LpInstance(other_lpi=zono.lpi)
 			# print(f"Trying {j}: ", end="")
