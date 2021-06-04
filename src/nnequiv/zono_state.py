@@ -94,6 +94,8 @@ class ZonoState:
 			do_branching = []
 		self.do_branching = do_branching
 		self.overapprox_nodes = []
+		self.do_exact = False
+		self.exactCounter=None
 
 	def from_init_zono(self, init: Zonotope):
 		self.zono = init.deep_copy()
@@ -119,6 +121,8 @@ class ZonoState:
 		state.workload/=2
 		self.workload=state.workload
 		self.depth=state.depth
+		self.do_exact = state.do_exact
+		self.exactCounter = state.exactCounter
 		for x in range(0, self.cur_network):
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
 		Timers.toc('zono_state_from_state')
@@ -179,7 +183,7 @@ class ZonoState:
 				Timers.toc("zono_state_split_decision")
 				return self.do_branching.pop()
 			else:
-				if Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and (self.cur_network==0 or self.cur_layer<9):
+				if self.do_exact or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and (self.cur_network==0 or self.cur_layer<9):
 					Timers.toc("zono_state_split_decision")
 					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
 				else:

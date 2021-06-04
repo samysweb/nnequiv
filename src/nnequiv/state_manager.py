@@ -1,4 +1,5 @@
 import copy
+from collections import namedtuple
 
 import numpy as np
 
@@ -9,6 +10,20 @@ from nnequiv.global_state import GLOBAL_STATE
 from nnequiv.refinement import Refinement
 from nnequiv.zono_state import ZonoState
 
+class OverapproxNodeSplits:
+	def __init__(self, splits, overapprox):
+		self.split_nodes = splits
+		self.overapprox_nodes=overapprox
+		self.exact_sets=0
+
+	def inc(self):
+		self.exact_sets+=1
+
+	def __str__(self):
+		return str((self.split_nodes, self.overapprox_nodes, self.exact_sets))
+
+	def __repr__(self):
+		return self.__str__()
 
 class EnumerationStackElement:
 	def __init__(self, state: ZonoState):
@@ -76,8 +91,22 @@ class StateManager:
 				GLOBAL_STATE.REFINED+=1
 			result=True
 		else:
-			GLOBAL_STATE.RIGHT += 1
-			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
+			if not el.state.do_exact:
+				branching_list = copy.copy(el.state.branching)
+				branching_list.sort()
+				exactCounter = OverapproxNodeSplits(len(el.state.branching),len(el.state.overapprox_nodes))
+				rv = ZonoState(el.state.network_count, do_branching=list(reversed(branching_list)))
+				rv.from_init_zono(el.state.initial_zono)
+				rv.do_exact = True
+				rv.branches = len(el.state.branching)
+				rv.exactCounter = exactCounter
+				rv.propagate_up_to_split(self.networks)
+				GLOBAL_STATE.EXACT_COUNTERS.append(exactCounter)
+				self.push(EnumerationStackElement(rv))
+				GLOBAL_STATE.RIGHT += 1
+				GLOBAL_STATE.FINISHED_FRAC += el.state.workload
+			else:
+				el.state.exactCounter.inc()
 		Timers.toc('StateManager.check')
 		return result
 
