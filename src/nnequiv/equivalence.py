@@ -48,9 +48,6 @@ class GracefulKiller:
 		print("\nEXITING...")
 		Timers.tocRec()
 		Timers.print_stats()
-		print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")
-		print(f"\n[VALID_DEPTH_DECISION] {str(GLOBAL_STATE.VALID_DEPTH_DECISION)}")
-		print(f"\n[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")
 		self.kill_now = True
 
 
@@ -60,6 +57,8 @@ def main_loop(manager : StateManager):
 	killer = GracefulKiller()
 	while not manager.done() and not killer.kill_now:
 		cur_state = manager.pop()
+		if not cur_state.state.active:
+			continue
 		if cur_state.is_finished(manager.get_networks()):
 			if not manager.check(cur_state):
 				print(f"NETWORKS NOT EQUIVALENT")
@@ -74,6 +73,3 @@ def main_loop(manager : StateManager):
 		if counter%5000:
 			status_update()
 	status_update()
-	print(f"\n[INVALID_DEPTH_DECISION] {str(GLOBAL_STATE.INVALID_DEPTH)}")
-	print(f"\n[VALID_DEPTH_DECISION] {str(GLOBAL_STATE.VALID_DEPTH_DECISION)}")
-	print(f"\n[VALID_DEPTH] {str(GLOBAL_STATE.VALID_DEPTH)}")

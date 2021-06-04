@@ -3,9 +3,7 @@ class GlobalState:
 		self.RIGHT = 0
 		self.WRONG = 0
 		self.FINISHED_FRAC = 0
-		self.VALID_DEPTH=[]
-		self.INVALID_DEPTH=[]
-		self.VALID_DEPTH_DECISION=[]
+		self.REFINED=0
 
 
 GLOBAL_STATE = GlobalState()

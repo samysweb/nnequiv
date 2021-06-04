@@ -1,4 +1,7 @@
 import copy
+from collections import namedtuple
+from enum import Enum, auto
+
 import numpy as np
 
 from nnenum.lpinstance import LpInstance
@@ -8,6 +11,19 @@ from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from nnequiv.global_state import GLOBAL_STATE
 
+class SplitDecision(Enum):
+	DNC = auto() #  Don't care
+	BOTH = auto()
+	POS = auto()
+	NEG = auto()
+	def __eq__(self, other):
+		if self.value == SplitDecision.DNC.value:
+			return True
+		else:
+			return self.value==other.value
+
+SplitPoint = namedtuple('SplitPoint', ['network', 'layer', 'index', 'decision'])
+OverapproxPoint = namedtuple('OverapproxPoint', ['network','layer','index','coefficient'])
 
 class LayerBounds:
 	def __init__(self):
@@ -54,7 +70,7 @@ class LayerBounds:
 
 
 class ZonoState:
-	def __init__(self, network_count, state=None):
+	def __init__(self, network_count, state=None, do_branching=None):
 		self.network_count = network_count
 		self.output_zonos = []
 		self.active = True
@@ -69,13 +85,15 @@ class ZonoState:
 		self.cur_layer = 0
 		self.split_heuristic = None
 		self.lpi = None
-		#self.branching = []
+		self.branching = []
 		self.initial_zono = None
 		self.layer_bounds = LayerBounds()
 		self.workload = 1.0
 		self.depth=0
-		#self.branching_precise=[]
-
+		if do_branching is None:
+			do_branching = []
+		self.do_branching = do_branching
+		self.overapprox_nodes = []
 
 	def from_init_zono(self, init: Zonotope):
 		self.zono = init.deep_copy()
@@ -95,8 +113,9 @@ class ZonoState:
 		self.layer_bounds = LayerBounds()
 		self.split_heuristic = state.split_heuristic.copy()
 		self.lpi = LpInstance(other_lpi=state.lpi)
-		#self.branching = copy.copy(state.branching)
-		#self.branching_precise = copy.deepcopy(state.branching_precise)
+		self.branching = copy.copy(state.branching)
+		self.do_branching = copy.copy(state.do_branching)
+		self.overapprox_nodes = state.overapprox_nodes
 		state.workload/=2
 		self.workload=state.workload
 		self.depth=state.depth
@@ -126,10 +145,63 @@ class ZonoState:
 
 	def update_lp(self, row, bias, tuple_list):
 		Timers.tic('zono_state_update_lp')
-		self.lpi.add_dense_row(row, bias)
+		lp_col_num = self.lpi.get_num_cols()
+		lp_row = row[:lp_col_num]
+		Timers.tic('zono_state_update_lp_alpha_min')
+		alpha_row = row[lp_col_num:]
+		ib = np.array(self.zono.init_bounds, dtype=self.zono.dtype)
+		alpha_min = self.lpi.compute_residual(alpha_row, ib[lp_col_num:])
+		Timers.toc('zono_state_update_lp_alpha_min')
+		self.lpi.add_dense_row(lp_row, bias - alpha_min)
 		for i, l, u in tuple_list:
 			self.lpi.set_col_bounds(i, l, u)
 		Timers.toc('zono_state_update_lp')
+
+	def split_decision(self, networks):
+		Timers.tic("zono_state_split_decision")
+		if Settings.EQUIV_OVERAPPROX_STRAT == 'DONT':
+			index = self.layer_bounds.pop_branch()
+			if index is None:
+				Timers.toc("zono_state_split_decision")
+				return None
+			Timers.toc("zono_state_split_decision")
+			return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
+		elif Settings.EQUIV_OVERAPPROX_STRAT == 'CEGAR' or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET':
+			index = self.layer_bounds.pop_branch()
+			if index is None:
+				Timers.toc("zono_state_split_decision")
+				return None
+			cur_split_point = SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.DNC)
+			while len(self.do_branching)>0 and cur_split_point>self.do_branching[-1]:
+				popped_el = self.do_branching.pop()
+				# print(f"Skipping {popped_el}")
+			if len(self.do_branching)>0 and cur_split_point==self.do_branching[-1]:
+				Timers.toc("zono_state_split_decision")
+				return self.do_branching.pop()
+			else:
+				if Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and (self.cur_network==0 or self.cur_layer<9):
+					Timers.toc("zono_state_split_decision")
+					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
+				else:
+					self.overapproximate(index, networks)
+					Timers.toc("zono_state_split_decision")
+					return None
+
+	def overapproximate(self, index, networks: [NeuralNetwork]):
+		Timers.tic('overapprox')
+		row = self.zono.mat_t[index]
+		bias = self.zono.center[index]
+		l, u = self.layer_bounds.output_bounds[index]
+		factor = u / (u - l)
+		new_dim_u = max(u * (-l) / (u - l), u * u / (u - l))
+		assert new_dim_u > 0.0
+		self.zono.mat_t[index] = factor * row
+		self.zono.center[index] = factor * bias
+		dim = self.zono.add_dimension(0.0, new_dim_u)
+		self.zono.mat_t[index, dim] = 1.0
+		self.overapprox_nodes.append(OverapproxPoint(self.cur_network, self.cur_layer, index, dim))
+		Timers.toc('overapprox')
+
 
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
 		#TODO(steuber): Maybe reorder: Only create child zono if feasible?
@@ -138,30 +210,40 @@ class ZonoState:
 		assert isinstance(network.layers[self.cur_layer], ReluLayer)
 
 		self.depth+=1
-		index = self.layer_bounds.pop_branch()
-		if index is None:
+		cur_split_decision = self.split_decision(networks)
+		if cur_split_decision is None:
 			Timers.toc('do_first_relu_split')
 			return None
+		split_net, split_layer, index, decision = cur_split_decision
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
-		child = ZonoState(self.network_count, state=self)
-		pos, neg = self, child
+		pos, neg = None, None
+		rv = None
+		if decision == SplitDecision.BOTH:
+			child = ZonoState(self.network_count, state=self)
+			pos, neg = self, child
+			rv = neg
+		elif decision == SplitDecision.NEG:
+			pos, neg = None, self
+		elif decision == SplitDecision.POS:
+			pos,neg = self, None
 
-		pos.contract_domain(-row, bias, index, networks,self.layer_bounds.output_bounds[index,1])
-		neg.contract_domain(row, -bias, index, networks,-self.layer_bounds.output_bounds[index,0])
-		#pos.branching.append((self.cur_network, self.cur_layer, index, True))
-		#neg.branching.append((self.cur_network, self.cur_layer, index, False))
-		#neg.branching_precise[-1][index]=False
-		if neg.active:
-			neg.zono.mat_t[index] = 0.0
-			neg.zono.center[index] = 0.0
+		if pos is not None:
+			pos.contract_domain(-row, bias, index, networks,self.layer_bounds.output_bounds[index,1])
+			pos.branching.append(SplitPoint(split_net, split_layer, index, SplitDecision.POS))
+		if neg is not None:
+			neg.contract_domain(row, -bias, index, networks,-self.layer_bounds.output_bounds[index,0])
+			if neg.active:
+				neg.zono.mat_t[index] = 0.0
+				neg.zono.center[index] = 0.0
 
-			neg.propagate_up_to_split(networks)
-		else:
-			neg = None
+				neg.propagate_up_to_split(networks)
+				neg.branching.append(SplitPoint(split_net, split_layer, index, SplitDecision.NEG))
+			else:
+				rv = None
 
 		Timers.toc('do_first_relu_split')
-		return neg
+		return rv
 
 	def propagate_layer(self, networks: [NeuralNetwork]):
 		Timers.tic('propagate_layer')
@@ -171,8 +253,6 @@ class ZonoState:
 		Timers.tic('propagate_layer_transform')
 		layer.transform_zono(self.zono)
 		Timers.toc('propagate_layer_transform')
-		#self.branching_precise.append(np.array([]))
-		#self.branching_precise.append(np.array([True] * self.zono.mat_t.shape[0]))
 		Timers.toc('propagate_layer')
 
 	def next_layer(self):
@@ -201,7 +281,6 @@ class ZonoState:
 	def set_to_zero(self, zeros):
 		Timers.tic('set_to_zero')
 		if zeros is not None:
-			#self.branching_precise[-1][zeros]=False
 			self.zono.mat_t[zeros] = 0.0
 			self.zono.center[zeros] = 0.0
 		Timers.toc('set_to_zero')
@@ -214,11 +293,19 @@ class ZonoState:
 		if self.cur_network < self.network_count and self.cur_layer >= len(networks[self.cur_network].layers):
 			self.cur_layer = 0
 			self.output_zonos[self.cur_network] = self.zono
+			new_dims = self.zono.mat_t.shape[1] - self.initial_zono.mat_t.shape[1]
+			init_center = self.initial_zono.center
+			init_mat = self.initial_zono.mat_t
+			if new_dims > 0:
+				init_mat = np.pad(init_mat, ((0, 0), (0, new_dims)))
 			new_zono = Zonotope(
-				self.initial_zono.center,
-				self.initial_zono.mat_t,
+				init_center,
+				init_mat,
 				init_bounds=self.zono.init_bounds
 			)
+			new_zono.pos1_gens = None
+			new_zono.neg1_gens = None
+			new_zono.init_bounds_nparray = None
 			# new_in_star = self.initial_star.copy()
 			# new_in_star.lpi = LpInstance(self.star.lpi)
 			self.cur_network += 1
@@ -231,6 +318,22 @@ class ZonoState:
 			Timers.toc('is_finished')
 			return False
 
+	def get_output_zonos(self):
+		rv = []
+		dim_count = self.output_zonos[-1].mat_t.shape[1]
+		for i in range(len(self.output_zonos) - 1):
+			missing_dims = dim_count - self.output_zonos[i].mat_t.shape[1]
+			if missing_dims > 0:
+				mat_t = np.pad(
+					self.output_zonos[i].mat_t,
+					((0, 0), (0, missing_dims))
+				)
+				rv.append(Zonotope(self.output_zonos[i].center, mat_t, self.output_zonos[i].init_bounds))
+			else:
+				rv.append(self.output_zonos[i].deep_copy())
+		rv.append(self.output_zonos[-1].deep_copy())
+		return rv
+
 	def check_feasible(self, overflow, networks):
 		assert self.active
 		Timers.tic('is_feasible')
@@ -238,14 +341,37 @@ class ZonoState:
 		if feasible is None:
 			self.active=False
 			GLOBAL_STATE.WRONG+=1
-			GLOBAL_STATE.INVALID_DEPTH.append((overflow,self.depth))
 			GLOBAL_STATE.FINISHED_FRAC+=self.workload
 			Timers.toc('is_feasible')
 			return False
 		else:
-			GLOBAL_STATE.VALID_DEPTH_DECISION.append((overflow, self.depth))
 			Timers.toc('is_feasible')
 			return True
+
+	def admits_refinement(self):
+		return len(self.overapprox_nodes)>0
+
+	def refine(self):
+		branching_list = self.get_branching_list()
+		rv = ZonoState(self.network_count, do_branching=branching_list)
+		rv.from_init_zono(self.initial_zono)
+		rv.workload = self.workload
+		return [rv]
+
+	def get_branching_list(self):
+		refine_node = self.overapprox_nodes[0]
+		previous_branching = copy.copy(self.branching)
+		previous_branching.append(SplitPoint(refine_node.network,
+		                                     refine_node.layer,
+		                                     refine_node.index, SplitDecision.BOTH))
+		previous_branching.sort()
+		return list(reversed(previous_branching))
+
+	def __str__(self):
+		return "ZONOTOPE\n"+\
+		f"PAST BRANCHING: {self.branching}\n"+\
+		f"NEXT BRANCHING: {self.do_branching}\n"+\
+		f"OVERAPPROX: {len(self.overapprox_nodes)}"
 
 
 def status_update():
@@ -255,7 +381,7 @@ def status_update():
 		expected = int(total / GLOBAL_STATE.FINISHED_FRAC)
 		percentage = float(total)/float(expected)*100
 		print(
-		f"\rWrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Expected {expected} ({percentage}%)",end="")
+		f"\rRefined: {GLOBAL_STATE.REFINED} | Wrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Expected {expected} ({percentage}%)",end="")
 	Timers.toc('status_update')
 
 

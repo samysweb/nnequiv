@@ -64,10 +64,20 @@ class StateManager:
 		assert el.state.active
 		equiv, data = self.property.check(el.state)
 		valid, result = self.valid_result(el, equiv, data)
-		if not valid:
+		if not valid and self.property.allows_fallback(el.state):
 			equiv, data = self.property.fallback_check(el.state)
 			valid, result = self.valid_result(el, equiv, data)
-			assert valid
+		if not valid:
+			assert el.state.admits_refinement()
+			new_zonos = el.state.refine()
+			for z in new_zonos:
+				z.propagate_up_to_split(self.networks)
+				self.push(EnumerationStackElement(z))
+				GLOBAL_STATE.REFINED+=1
+			result=True
+		else:
+			GLOBAL_STATE.RIGHT += 1
+			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 		Timers.toc('StateManager.check')
 		return result
 
@@ -81,13 +91,11 @@ class StateManager:
 			equivalence was shown.
 		"""
 		Timers.tic('StateManager.valid_result')
-		GLOBAL_STATE.VALID_DEPTH.append(el.state.depth)
-		GLOBAL_STATE.RIGHT += 1
-		GLOBAL_STATE.FINISHED_FRAC += el.state.workload
 		if not equiv:
 			# TODO(steuber): Make float types explicit?
-			r1 = self.networks[0].execute(np.array(data[1],dtype=np.float32))
-			r2 = self.networks[1].execute(np.array(data[1],dtype=np.float32))
+			input_size = self.networks[0].get_num_inputs()
+			r1 = self.networks[0].execute(np.array(data[1][:input_size],dtype=np.float32))
+			r2 = self.networks[1].execute(np.array(data[1][:input_size],dtype=np.float32))
 			if not self.property.check_out(r1, r2):
 				print(f"\n[NEQUIV] {data[0]}\n")
 				print(r1)
@@ -100,6 +108,6 @@ class StateManager:
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
-			print(f"\n[EQUIV] {data[0]}\n")
+			#print(f"\n[EQUIV] {data[0]}\n")
 			Timers.toc('StateManager.valid_result')
 			return (True, True)

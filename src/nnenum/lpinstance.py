@@ -499,6 +499,11 @@ class LpInstance(Freezable):
 
         Timers.toc('add_dense_row')
 
+    def compute_residual(self, alpha_row, bounds):
+        min_factors = np.where(alpha_row <= 0, bounds[:, 1], bounds[:, 0])
+        alpha_min = min_factors.dot(alpha_row)
+        return alpha_min
+
     def set_constraints_csr(self, data, glpk_indices, indptr, shape):
         '''
         set the constrains row by row to be equal to the passed-in csr matrix attribues

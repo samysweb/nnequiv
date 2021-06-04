@@ -169,6 +169,15 @@ class Zonotope(Freezable):
             self.neg1_gens[i] = lb
             self.pos1_gens[i] = ub
 
+    def add_dimension(self, l, u):
+        i = len(self.init_bounds)
+        self.init_bounds.append((0,0))
+        self.neg1_gens = None
+        self.pos1_gens = None
+        self.mat_t = np.hstack((self.mat_t, np.zeros((self.mat_t.shape[0],1), dtype=self.dtype)))
+        self.update_init_bounds(i,(l,u),skip_check=True)
+        return i
+
     def maximize(self, vector):
         'get the maximum point of the zonotope in the passed-in direction'
 

@@ -10,9 +10,6 @@ from ..zono_state import ZonoState
 class Top1Equivalence(EquivalenceProperty):
 
 	def check(self, zono : ZonoState):
-		return self.fallback_check(zono)
-
-	def fallback_check(self, zono):
 		Timers.tic('check_top1_fallback')
 		mat0 = zono.output_zonos[0].mat_t
 		mat1 = zono.output_zonos[1].mat_t
@@ -45,6 +42,12 @@ class Top1Equivalence(EquivalenceProperty):
 
 		Timers.toc('check_top1_fallback')
 		return True, (None, None)
+
+	def fallback_check(self, zono):
+		raise NotImplementedError()
+
+	def allows_fallback(self, state):
+		return False
 
 	def check_out(self, r1, r2):
 		return np.argmax(r1)==np.argmax(r2)
