@@ -1,7 +1,9 @@
 import copy
+import sys
 
 import numpy as np
 
+from nnenum.lpinstance import UnsatError
 from nnenum.network import NeuralNetwork
 from nnenum.timerutil import Timers
 from nnequiv.equivalence_properties import EquivalenceProperty
@@ -65,8 +67,16 @@ class StateManager:
 		equiv, data = self.property.check(el.state)
 		valid, result = self.valid_result(el, equiv, data)
 		if not valid and self.property.allows_fallback(el.state):
-			equiv, data = self.property.fallback_check(el.state)
-			valid, result = self.valid_result(el, equiv, data)
+			try:
+				equiv, data = self.property.fallback_check(el.state)
+				valid, result = self.valid_result(el, equiv, data)
+			except UnsatError:
+				valid = False
+				if not el.state.admits_refinement():
+					print("UNSAT without possible refinement!",file=sys.stderr)
+					raise UnsatError()
+				else:
+					print("UNSAT, refining and retrying...")
 		if not valid:
 			assert el.state.admits_refinement()
 			new_zonos = el.state.refine()
