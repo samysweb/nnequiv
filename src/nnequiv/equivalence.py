@@ -61,6 +61,8 @@ def main_loop(manager : StateManager):
 		if not cur_state.state.active:
 			continue
 		if cur_state.is_finished(manager.get_networks()):
+			if not cur_state.state.check_feasible(None, None):
+				continue
 			if not manager.check(cur_state):
 				print(f"NETWORKS NOT EQUIVALENT")
 				break
