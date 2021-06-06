@@ -1,9 +1,11 @@
 import numpy as np
 
+from nnenum.lpinstance import UnsatError
 from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from .property import EquivalenceProperty
 from ..zono_state import ZonoState
+from nnequiv.global_state import GLOBAL_STATE
 
 
 class EpsilonEquivalence(EquivalenceProperty):
@@ -57,13 +59,21 @@ class EpsilonEquivalence(EquivalenceProperty):
 		bias = output_zonos[0].center - output_zonos[1].center
 		max_eps = 0.0
 		for i in range(mat.shape[0]):
-			min_vec = zono.lpi.minimize(mat[i, :input_size])
+			try:
+				min_vec = zono.lpi.minimize(mat[i, :input_size])
+			except UnsatError:
+				Timers.toc('check_epsilon_fallback')
+				raise UnsatError
 			min_val = self.compute_deviation(min_vec, bias[i], mat[i], output_zonos[-1].init_bounds, 0,
 			                                 output_zonos[-1].dtype)
 			if min_val > self.epsilon or min_val < -self.epsilon:
 				Timers.toc('check_epsilon_fallback')
 				return False, (min_val, min_vec)
-			max_vec = zono.lpi.minimize(-mat[i, :input_size])
+			try:
+				max_vec = zono.lpi.minimize(-mat[i, :input_size])
+			except UnsatError:
+				Timers.toc('check_epsilon_fallback')
+				raise UnsatError
 			max_val = self.compute_deviation(max_vec, bias[i], mat[i], output_zonos[-1].init_bounds, 1,
 			                                 output_zonos[-1].dtype)
 			if max_val > self.epsilon or max_val < -self.epsilon:

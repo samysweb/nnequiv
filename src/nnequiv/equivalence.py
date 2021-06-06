@@ -73,7 +73,7 @@ def main_loop(manager : StateManager):
 			if cur_state.state.active:
 				manager.push(cur_state)
 		counter+=1
-		if counter%5000:
+		if counter%5000==1:
 			status_update()
 	status_update()
 	print(f"\n[EXACT_COUNTERS] {GLOBAL_STATE.EXACT_COUNTERS}")

@@ -1,6 +1,6 @@
 import numpy as np
 
-from nnenum.lpinstance import LpInstance
+from nnenum.lpinstance import LpInstance, UnsatError
 from nnenum.timerutil import Timers
 from .property import EquivalenceProperty
 from ..zono_state import ZonoState
@@ -39,7 +39,11 @@ class Top1Equivalence(EquivalenceProperty):
 			for k in range(mat1.shape[0]):
 				# if k==j:
 				# 	continue
-				max_vec = lp.minimize(-current_mat1[k, :lp_col_num])
+				try:
+					max_vec = lp.minimize(-current_mat1[k, :lp_col_num])
+				except UnsatError:
+					Timers.toc('check_top1_fallback')
+					raise UnsatError
 				max_val = self.compute_deviation(max_vec, current_bias1[k], current_mat1[k], output_zonos[-1].init_bounds, 1,
 				                                 output_zonos[-1].dtype)
 				#max_val = current_bias1[k] + np.dot(current_mat1[k], max_vec)

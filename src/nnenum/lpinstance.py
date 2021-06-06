@@ -650,7 +650,7 @@ class LpInstance(Freezable):
             assert basis_type == 'cpx'
             glpk.glp_cpx_basis(self.lp)
 
-    def minimize(self, direction_vec, fail_on_unsat=True, use_exact=True):
+    def minimize(self, direction_vec, fail_on_unsat=True, use_exact=False):
         '''minimize the lp, returning a list of assigments to each of the variables
 
         if direction_vec is not None, this will first assign the optimization direction
@@ -669,7 +669,10 @@ class LpInstance(Freezable):
             self.reset_basis()
         
         start = time.perf_counter()
-        simplex_res = glpk.glp_simplex(self.lp, get_lp_params())
+        if use_exact:
+            simplex_res = glpk.glp_exact(self.lp, get_lp_params())
+        else:
+            simplex_res = glpk.glp_simplex(self.lp, get_lp_params())
 
         if simplex_res != 0: # solver failure (possibly timeout)
             r = self.get_num_rows()
@@ -712,13 +715,13 @@ class LpInstance(Freezable):
             print("Note: minimize failed with fail_on_unsat was true, trying to reset basis...")
 
             self.reset_basis()
-            rv = self.minimize(direction_vec, fail_on_unsat=False)
+            rv = self.minimize(direction_vec, fail_on_unsat=False, use_exact=True)
 
             if rv is None:
                 print("still unsat after reset basis, trying no-dir optimization")
                 self.reset_basis()
             
-                result_nodir = self.minimize(None, fail_on_unsat=False)
+                result_nodir = self.minimize(None, fail_on_unsat=False, use_exact=True)
 
                 # lp became infeasible when I picked an optimization direction
                 if result_nodir is not None:
