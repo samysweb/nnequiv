@@ -78,6 +78,7 @@ class StateManager:
 		else:
 			GLOBAL_STATE.RIGHT += 1
 			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
+			GLOBAL_STATE.MAX_REFINE_COUNT = max(GLOBAL_STATE.MAX_REFINE_COUNT, len(el.state.branching))
 		Timers.toc('StateManager.check')
 		return result
 
@@ -104,7 +105,7 @@ class StateManager:
 				Timers.toc('StateManager.valid_result')
 				return (True, False)
 			else:
-				print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				# print(f"\n[NEED_FALLBACK] {data[0]}\n")
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:

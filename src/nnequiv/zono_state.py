@@ -95,9 +95,10 @@ class ZonoState:
 		self.do_branching = do_branching
 		self.overapprox_nodes = []
 
-	def from_init_zono(self, init: Zonotope):
+	def from_init_zono(self, init: Zonotope, set_initial=True):
 		self.zono = init.deep_copy()
-		self.initial_zono = init.deep_copy()
+		if set_initial:
+			self.initial_zono = init.deep_copy()
 		if self.lpi is None:
 			self.lpi = LpInstance()
 			for i, (lb, ub) in enumerate(self.zono.init_bounds):
@@ -115,7 +116,7 @@ class ZonoState:
 		self.lpi = LpInstance(other_lpi=state.lpi)
 		self.branching = copy.copy(state.branching)
 		self.do_branching = copy.copy(state.do_branching)
-		self.overapprox_nodes = state.overapprox_nodes
+		self.overapprox_nodes = state.overapprox_nodes.copy()
 		state.workload/=2
 		self.workload=state.workload
 		self.depth=state.depth
@@ -159,18 +160,14 @@ class ZonoState:
 
 	def split_decision(self, networks):
 		Timers.tic("zono_state_split_decision")
+		index = self.layer_bounds.pop_branch()
+		if index is None:
+			Timers.toc("zono_state_split_decision")
+			return None
 		if Settings.EQUIV_OVERAPPROX_STRAT == 'DONT':
-			index = self.layer_bounds.pop_branch()
-			if index is None:
-				Timers.toc("zono_state_split_decision")
-				return None
 			Timers.toc("zono_state_split_decision")
 			return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
-		elif Settings.EQUIV_OVERAPPROX_STRAT == 'CEGAR' or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET':
-			index = self.layer_bounds.pop_branch()
-			if index is None:
-				Timers.toc("zono_state_split_decision")
-				return None
+		elif Settings.EQUIV_OVERAPPROX_STRAT == 'CEGAR' or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' or Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_MAX":
 			cur_split_point = SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.DNC)
 			while len(self.do_branching)>0 and cur_split_point>self.do_branching[-1]:
 				popped_el = self.do_branching.pop()
@@ -179,13 +176,18 @@ class ZonoState:
 				Timers.toc("zono_state_split_decision")
 				return self.do_branching.pop()
 			else:
-				if Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and (self.cur_network==0 or self.cur_layer<9):
+				if Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and self.cur_network==0:
 					Timers.toc("zono_state_split_decision")
+					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
+				elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_MAX" and len(self.branching)<GLOBAL_STATE.MAX_REFINE_COUNT:
+					Timers.toc('zono_state_split_decision')
 					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
 				else:
 					self.overapproximate(index, networks)
 					Timers.toc("zono_state_split_decision")
 					return None
+
+
 
 	def overapproximate(self, index, networks: [NeuralNetwork]):
 		Timers.tic('overapprox')
@@ -294,8 +296,8 @@ class ZonoState:
 			self.cur_layer = 0
 			self.output_zonos[self.cur_network] = self.zono
 			new_dims = self.zono.mat_t.shape[1] - self.initial_zono.mat_t.shape[1]
-			init_center = self.initial_zono.center
-			init_mat = self.initial_zono.mat_t
+			init_center = self.initial_zono.center.copy()
+			init_mat = self.initial_zono.mat_t.copy()
 			if new_dims > 0:
 				init_mat = np.pad(init_mat, ((0, 0), (0, new_dims)))
 			new_zono = Zonotope(
@@ -309,7 +311,7 @@ class ZonoState:
 			# new_in_star = self.initial_star.copy()
 			# new_in_star.lpi = LpInstance(self.star.lpi)
 			self.cur_network += 1
-			self.from_init_zono(new_zono)
+			self.from_init_zono(new_zono, set_initial=False)
 
 		if self.network_count <= self.cur_network:
 			Timers.toc('is_finished')
@@ -381,7 +383,7 @@ def status_update():
 		expected = int(total / GLOBAL_STATE.FINISHED_FRAC)
 		percentage = float(total)/float(expected)*100
 		print(
-		f"\rRefined: {GLOBAL_STATE.REFINED} | Wrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Expected {expected} ({percentage}%)",end="")
+		f"\rRefined: {GLOBAL_STATE.REFINED} | Max Refine Depth: {GLOBAL_STATE.MAX_REFINE_COUNT} | Wrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Total Zonos Considered: {total+GLOBAL_STATE.REFINED} | Expected {expected} ({percentage}%)",end="")
 	Timers.toc('status_update')
 
 

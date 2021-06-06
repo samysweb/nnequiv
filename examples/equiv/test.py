@@ -43,6 +43,12 @@ def main():
 	net1File = sys.argv[1]
 	net2File = sys.argv[2]
 	property = sys.argv[3]
+	strategy = sys.argv[5]
+	if strategy not in Settings.EQUIV_STRATEGIES:
+		print(f"ERROR: Strategy {strategy} unknown", file=sys.stderr)
+		return
+	else:
+		Settings.EQUIV_OVERAPPROX_STRAT = strategy
 
 	network1, network2 = load_networks(net1File, net2File)
 
