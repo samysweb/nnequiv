@@ -339,7 +339,7 @@ class ZonoState:
 	def check_feasible(self, overflow, networks):
 		assert self.active
 		Timers.tic('is_feasible')
-		feasible = self.lpi.minimize(None,fail_on_unsat=False)
+		feasible = self.lpi.minimize(None,fail_on_unsat=False, use_exact=False)
 		if feasible is None:
 			self.active=False
 			GLOBAL_STATE.WRONG+=1

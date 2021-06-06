@@ -602,7 +602,7 @@ class LpInstance(Freezable):
         returns a feasible point or None
         '''
 
-        return self.minimize(None, fail_on_unsat=False) is not None
+        return self.minimize(None, fail_on_unsat=False, use_exact=False) is not None
 
     def contains_point(self, pt, tol=1e-9):
         '''does this lpi contain the point?
@@ -650,7 +650,7 @@ class LpInstance(Freezable):
             assert basis_type == 'cpx'
             glpk.glp_cpx_basis(self.lp)
 
-    def minimize(self, direction_vec, fail_on_unsat=True):
+    def minimize(self, direction_vec, fail_on_unsat=True, use_exact=True):
         '''minimize the lp, returning a list of assigments to each of the variables
 
         if direction_vec is not None, this will first assign the optimization direction
@@ -682,17 +682,24 @@ class LpInstance(Freezable):
             print("Retrying with reset")
             self.reset_basis()
             start = time.perf_counter()
-            simplex_res = glpk.glp_simplex(self.lp, get_lp_params())
+            if use_exact:
+                simplex_res = glpk.glp_exact(self.lp, get_lp_params())
+            else:
+                simplex_res = glpk.glp_simplex(self.lp, get_lp_params())
             diff = time.perf_counter() - start
             print(f"result with reset  ({simplex_res}) {round(diff, 3)} sec")
 
+        if simplex_res != 0:
             print("Retrying with reset + alternate GLPK settings")
                     
             # retry with alternate params
             params = get_lp_params(alternate_lp_params=True)
             self.reset_basis()
             start = time.perf_counter()
-            simplex_res = glpk.glp_simplex(self.lp, params)
+            if use_exact:
+                simplex_res = glpk.glp_exact(self.lp, params)
+            else:
+                simplex_res = glpk.glp_simplex(self.lp, params)
             diff = time.perf_counter() - start
             print(f"result with reset & alternate settings ({simplex_res}) {round(diff, 3)} sec")
             
