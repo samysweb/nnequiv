@@ -47,6 +47,7 @@ class GracefulKiller:
 	def exit_gracefully(self,signum, frame):
 		print("\nEXITING...")
 		Timers.tocRec()
+		print(f"\n[EXACT_COUNTERS] {GLOBAL_STATE.EXACT_COUNTERS}")
 		Timers.print_stats()
 		self.kill_now = True
 

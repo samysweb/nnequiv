@@ -180,7 +180,7 @@ class ZonoState:
 				Timers.toc("zono_state_split_decision")
 				return self.do_branching.pop()
 			else:
-				if Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and self.cur_network==0:
+				if (Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and self.cur_network==0) or self.do_exact:
 					Timers.toc("zono_state_split_decision")
 					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
 				elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_MAX" and len(self.branching)<GLOBAL_STATE.MAX_REFINE_COUNT:
