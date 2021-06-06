@@ -5,6 +5,7 @@ class GlobalState:
 		self.FINISHED_FRAC = 0
 		self.REFINED=0
 		self.EXACT_COUNTERS = []
+		self.MAX_REFINE_COUNT=0
 
 
 GLOBAL_STATE = GlobalState()

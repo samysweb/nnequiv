@@ -19,6 +19,7 @@ class Settings(metaclass=FreezableMeta):
 
     BRANCH_OVERAPPROX, BRANCH_EGO, BRANCH_EGO_LIGHT, BRANCH_EXACT = range(4) # used for BRANCH_MODE
     SPLIT_LARGEST, SPLIT_ONE_NORM, SPLIT_SMALLEST, SPLIT_INORDER = range(4) # used for SPLIT_ORDER
+    EQUIV_STRATEGIES = ['DONT', 'CEGAR', 'SECOND_NET', 'REFINE_UNTIL_MAX']
     #TODO: one norm should acutally be called inf norm
 
     @classmethod
@@ -133,5 +134,5 @@ class Settings(metaclass=FreezableMeta):
 
 
         # EQUIV
-        # 'DONT', 'CEGAR', 'SECOND_NET'
-        cls.EQUIV_OVERAPPROX_STRAT = 'CEGAR'
+        # 'DONT', 'CEGAR', 'SECOND_NET', 'REFINE_UNTIL_MAX'
+        cls.EQUIV_OVERAPPROX_STRAT = 'REFINE_UNTIL_MAX' #'CEGAR'#'CEGAR'
