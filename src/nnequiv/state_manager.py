@@ -1,10 +1,13 @@
 import copy
 import sys
+from collections import deque
+from math import floor
 
 import numpy as np
 
 from nnenum.lpinstance import UnsatError
 from nnenum.network import NeuralNetwork
+from nnenum.settings import Settings
 from nnenum.timerutil import Timers
 from nnequiv.equivalence_properties import EquivalenceProperty
 from nnequiv.global_state import GLOBAL_STATE
@@ -41,6 +44,7 @@ class StateManager:
 		self.enumeration_stack = [EnumerationStackElement(init)]
 		self.property = property
 		self.networks = networks
+		self.refinement_counts = deque()
 
 	def get_networks(self):
 		return self.networks
@@ -88,7 +92,22 @@ class StateManager:
 		else:
 			GLOBAL_STATE.RIGHT += 1
 			GLOBAL_STATE.FINISHED_FRAC += el.state.workload
-			GLOBAL_STATE.MAX_REFINE_COUNT = max(GLOBAL_STATE.MAX_REFINE_COUNT, len(el.state.branching))
+			Timers.tic('refine_limit_computation')
+			if Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL and Settings.EQUIV_OVERAPPROX_STRAT != "REFINE_UNTIL_LAST":
+				refine_count = len(el.state.branching)
+				if len(self.refinement_counts)>=Settings.EQUIV_OVERAPPROX_STRAT_MOVING_WINDOW:
+					self.refinement_counts.pop()
+				self.refinement_counts.appendleft(refine_count)
+			if Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_MAX":
+				GLOBAL_STATE.REFINE_LIMIT = max(self.refinement_counts)
+			elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_95P":
+				sorted_counts = list(self.refinement_counts)
+				sorted_counts.sort()
+				index = min(len(sorted_counts)-1,floor(Settings.EQUIV_OVERAPPROX_STRAT_MOVING_WINDOW*0.95))
+				GLOBAL_STATE.REFINE_LIMIT = sorted_counts[index]
+			elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_LAST":
+				GLOBAL_STATE.REFINE_LIMIT = len(el.state.branching)
+			Timers.toc('refine_limit_computation')
 		Timers.toc('StateManager.check')
 		return result
 

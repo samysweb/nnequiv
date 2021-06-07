@@ -167,7 +167,7 @@ class ZonoState:
 		if Settings.EQUIV_OVERAPPROX_STRAT == 'DONT':
 			Timers.toc("zono_state_split_decision")
 			return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
-		elif Settings.EQUIV_OVERAPPROX_STRAT == 'CEGAR' or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' or Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_MAX":
+		elif Settings.EQUIV_OVERAPPROX_STRAT == 'CEGAR' or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' or Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL:
 			cur_split_point = SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.DNC)
 			while len(self.do_branching)>0 and cur_split_point>self.do_branching[-1]:
 				popped_el = self.do_branching.pop()
@@ -176,11 +176,10 @@ class ZonoState:
 				Timers.toc("zono_state_split_decision")
 				return self.do_branching.pop()
 			else:
-				if Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and self.cur_network==0:
+				if (Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and self.cur_network==0)\
+					or (Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL\
+					    and len(self.branching)<GLOBAL_STATE.REFINE_LIMIT):
 					Timers.toc("zono_state_split_decision")
-					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
-				elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_MAX" and len(self.branching)<GLOBAL_STATE.MAX_REFINE_COUNT:
-					Timers.toc('zono_state_split_decision')
 					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
 				else:
 					self.overapproximate(index, networks)
@@ -383,7 +382,7 @@ def status_update():
 		expected = int(total / GLOBAL_STATE.FINISHED_FRAC)
 		percentage = float(total)/float(expected)*100
 		print(
-		f"\rRefined: {GLOBAL_STATE.REFINED} | Max Refine Depth: {GLOBAL_STATE.MAX_REFINE_COUNT} | Wrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Total Zonos Considered: {total+GLOBAL_STATE.REFINED} | Expected {expected} ({percentage}%)",end="")
+		f"\rRefined: {GLOBAL_STATE.REFINED} | Refine Limit: {GLOBAL_STATE.REFINE_LIMIT} | Wrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Total Zonos Considered: {total + GLOBAL_STATE.REFINED} | Expected {expected} ({percentage}%)",end="")
 	Timers.toc('status_update')
 
 

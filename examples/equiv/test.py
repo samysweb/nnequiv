@@ -49,6 +49,8 @@ def main():
 		return
 	else:
 		Settings.EQUIV_OVERAPPROX_STRAT = strategy
+		if strategy.startswith("REFINE_UNTIL"):
+			Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL=True
 
 	network1, network2 = load_networks(net1File, net2File)
 
