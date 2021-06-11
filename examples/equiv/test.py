@@ -36,6 +36,9 @@ def generateBox(inputShape, index):
 
 
 def main():
+	Timers.reset()
+	Timers.tic('main')
+	Timers.tic('main_init')
 	Settings.TIMING_STATS = True
 	# TODO(steuber): Check out implications of this setting
 	Settings.SPLIT_TOLERANCE = 1e-8
@@ -51,19 +54,26 @@ def main():
 		Settings.EQUIV_OVERAPPROX_STRAT = strategy
 		if strategy.startswith("REFINE_UNTIL"):
 			Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL=True
+	Timers.toc('main_init')
 
+	Timers.tic('net_load')
 	network1, network2 = load_networks(net1File, net2File)
+	Timers.toc('net_load')
 
+	Timers.tic('property_create')
 	if sys.argv[4] == "top":
 		equivprop = Top1Equivalence()
 	else:
 		epsilon = float(sys.argv[4])
 		equivprop = EpsilonEquivalence(epsilon, networks=[network1,network2])
+	Timers.toc('property_create')
 
-
+	Timers.tic('generate_box')
 	input = generateBox(network1.get_input_shape(),property)
+	Timers.toc('generate_box')
 
 	check_equivalence(network1, network2, input, equivprop)
+	Timers.toc('main')
 	print("")
 	Timers.print_stats()
 	print("")

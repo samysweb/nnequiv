@@ -18,7 +18,6 @@ def make_init_zs(init, networks):
 	return zono_state
 
 def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input : Zonotope, equiv):
-	Timers.reset()
 	if not Settings.TIMING_STATS:
 		Timers.disable()
 

@@ -134,10 +134,10 @@ class StateManager:
 				Timers.toc('StateManager.valid_result')
 				return (True, False)
 			else:
-				# print(f"\n[NEED_FALLBACK] {data[0]}\n")
+				#print(f"\n[NEED_FALLBACK] {data[0]}\n")
 				Timers.toc('StateManager.valid_result')
 				return (False, False)
 		else:
-			#print(f"\n[EQUIV] {data[0]}\n")
+			# print(f"\n[EQUIV] {data[0]}\n")
 			Timers.toc('StateManager.valid_result')
 			return (True, True)

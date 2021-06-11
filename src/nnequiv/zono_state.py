@@ -12,10 +12,10 @@ from nnenum.zonotope import Zonotope
 from nnequiv.global_state import GLOBAL_STATE
 
 class SplitDecision(Enum):
-	DNC = auto() #  Don't care
 	BOTH = auto()
 	POS = auto()
 	NEG = auto()
+	DNC = auto() #  Don't care
 	def __eq__(self, other):
 		if self.value == SplitDecision.DNC.value:
 			return True
@@ -74,6 +74,7 @@ class ZonoState:
 		self.network_count = network_count
 		self.output_zonos = []
 		self.active = True
+		self.before_overapprox = None
 		for x in range(0, self.network_count):
 			self.output_zonos.append(None)
 
@@ -91,7 +92,7 @@ class ZonoState:
 		self.workload = 1.0
 		self.depth=0
 		if do_branching is None:
-			do_branching = []
+			do_branching = None
 		self.do_branching = do_branching
 		self.overapprox_nodes = []
 
@@ -169,12 +170,9 @@ class ZonoState:
 			return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
 		elif Settings.EQUIV_OVERAPPROX_STRAT == 'CEGAR' or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' or Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL:
 			cur_split_point = SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.DNC)
-			while len(self.do_branching)>0 and cur_split_point>self.do_branching[-1]:
-				popped_el = self.do_branching.pop()
-				# print(f"Skipping {popped_el}")
-			if len(self.do_branching)>0 and cur_split_point==self.do_branching[-1]:
+			if self.do_branching is not None and cur_split_point <= self.do_branching:
 				Timers.toc("zono_state_split_decision")
-				return self.do_branching.pop()
+				return self.do_branching
 			else:
 				if (Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and self.cur_network==0)\
 					or (Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL\
@@ -182,6 +180,8 @@ class ZonoState:
 					Timers.toc("zono_state_split_decision")
 					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
 				else:
+					if self.before_overapprox is None:
+						self.before_overapprox = ZonoState(self.network_count, state=self)
 					self.overapproximate(index, networks)
 					Timers.toc("zono_state_split_decision")
 					return None
@@ -215,6 +215,7 @@ class ZonoState:
 		if cur_split_decision is None:
 			Timers.toc('do_first_relu_split')
 			return None
+		assert self.before_overapprox is None
 		split_net, split_layer, index, decision = cur_split_decision
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
@@ -353,10 +354,15 @@ class ZonoState:
 		return len(self.overapprox_nodes)>0
 
 	def refine(self):
-		branching_list = self.get_branching_list()
-		rv = ZonoState(self.network_count, do_branching=branching_list)
-		rv.from_init_zono(self.initial_zono)
+		#branching_list = self.get_branching_list()
+		#rv = ZonoState(self.network_count, do_branching=branching_list)
+		#rv.from_init_zono(self.initial_zono)
+		rv = self.before_overapprox
+		refine_node = self.overapprox_nodes[0]
 		rv.workload = self.workload
+		rv.do_branching = SplitPoint(refine_node.network,
+		                                     refine_node.layer,
+		                                     refine_node.index, SplitDecision.BOTH)
 		return [rv]
 
 	def get_branching_list(self):
