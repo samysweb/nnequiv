@@ -176,7 +176,7 @@ class ZonoState:
 			else:
 				if (Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' and self.cur_network==0)\
 					or (Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL\
-					    and len(self.branching)<GLOBAL_STATE.REFINE_LIMIT):
+					    and len(self.branching)<(GLOBAL_STATE.REFINE_LIMIT)):
 					Timers.toc("zono_state_split_decision")
 					return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
 				else:
