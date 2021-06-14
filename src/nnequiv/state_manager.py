@@ -107,8 +107,10 @@ class StateManager:
 				GLOBAL_STATE.REFINE_LIMIT = sorted_counts[index]
 			elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_LAST":
 				GLOBAL_STATE.REFINE_LIMIT = len(el.state.branching)
-			elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_LAST_OPTIMISTIC":
+			elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_LAST_OPTIMISTIC1":
 				GLOBAL_STATE.REFINE_LIMIT = len(el.state.branching)-1
+			elif Settings.EQUIV_OVERAPPROX_STRAT == "REFINE_UNTIL_LAST_OPTIMISTIC2":
+				GLOBAL_STATE.REFINE_LIMIT = len(el.state.branching)-2
 			Timers.toc('refine_limit_computation')
 		Timers.toc('StateManager.check')
 		return result
