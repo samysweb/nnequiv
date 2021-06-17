@@ -182,6 +182,7 @@ class ZonoState:
 				else:
 					if self.before_overapprox is None:
 						self.before_overapprox = ZonoState(self.network_count, state=self)
+						self.before_overapprox.workload = self.workload
 					self.overapproximate(index, networks)
 					Timers.toc("zono_state_split_decision")
 					return None

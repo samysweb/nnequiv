@@ -28,7 +28,8 @@ class Top1Equivalence(EquivalenceProperty):
 				alpha_row = current_mat0[k, lp_col_num:]
 				ib = np.array(output_zonos[-1].init_bounds, dtype=output_zonos[-1].dtype)
 				alpha_min = lp.compute_residual(alpha_row, ib[lp_col_num:])
-				lp.add_dense_row(lp_row, -current_bias0[k] - alpha_min)
+				if np.count_nonzero(lp_row)!=0:
+					lp.add_dense_row(lp_row, -current_bias0[k] - alpha_min)
 			if not lp.is_feasible():
 				# print(f"Skipped")
 				continue
