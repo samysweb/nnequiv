@@ -68,7 +68,15 @@ class StateManager:
 	def check(self, el: EnumerationStackElement):
 		Timers.tic('StateManager.check')
 		assert el.state.active
-		equiv, data = self.property.check(el.state)
+		try:
+			equiv, data = self.property.check(el.state)
+		except UnsatError:
+			valid = False
+			if not el.state.admits_refinement():
+				print("UNSAT without possible refinement!",file=sys.stderr)
+				raise UnsatError()
+			else:
+				print("UNSAT, refining and retrying...")
 		valid, result = self.valid_result(el, equiv, data)
 		if not valid and self.property.allows_fallback(el.state):
 			try:
