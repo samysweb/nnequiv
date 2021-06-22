@@ -89,6 +89,17 @@ class StateManager:
 					raise UnsatError()
 				else:
 					print("UNSAT, refining and retrying...")
+		if not valid and not el.state.admits_refinement():
+			try:
+				equiv, data = self.property.check(el.state, use_exact=True)
+				valid, result = self.valid_result(el, equiv, data)
+			except UnsatError:
+				valid = False
+				if not el.state.admits_refinement():
+					print("UNSAT without possible refinement!",file=sys.stderr)
+					raise UnsatError()
+				else:
+					print("UNSAT, refining and retrying...")
 		if not valid:
 			assert el.state.admits_refinement()
 			new_zonos = el.state.refine()
@@ -136,8 +147,8 @@ class StateManager:
 		if not equiv:
 			# TODO(steuber): Make float types explicit?
 			input_size = self.networks[0].get_num_inputs()
-			r1 = self.networks[0].execute(np.array(data[1][:input_size],dtype=np.float32))
-			r2 = self.networks[1].execute(np.array(data[1][:input_size],dtype=np.float32))
+			r1 = self.networks[0].execute(data[1][:input_size])
+			r2 = self.networks[1].execute(data[1][:input_size])
 			if not self.property.check_out(r1, r2):
 				print(f"\n[NEQUIV] {data[0]}\n")
 				print(r1)

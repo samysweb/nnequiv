@@ -39,13 +39,16 @@ def zono_from_compressed_init_box(init_bm, init_bias, init_box):
 class Zonotope(Freezable):
     'zonotope class'
 
-    def __init__(self, center, gen_mat_t, init_bounds=None):
+    def __init__(self, center, gen_mat_t, init_bounds=None, dtype=None):
         '''
         gen_mat_t has one generator per COLUMN
 
         init_bounds for a traditional zonotope is [-1, 1]
         '''
-
+        if dtype is None:
+            dtype=np.float64
+        center = np.array(center,dtype=dtype)
+        gen_mat_t = np.array(gen_mat_t, dtype=dtype)
         if center is not None:
             self.dtype = center.dtype
             assert isinstance(center, np.ndarray)

@@ -138,6 +138,13 @@ class ZonoState:
 	def contract_domain(self, row, bias, index, networks, overflow):
 		Timers.tic('zono_state_contract_domain')
 		tuple_list = self.zono.contract_domain(row,bias)
+		for (i, l, u) in tuple_list:
+			if l>u: # If l is larger than u we can stop
+				self.active = False
+				GLOBAL_STATE.WRONG += 1
+				GLOBAL_STATE.FINISHED_FRAC += self.workload
+				Timers.toc('zono_state_contract_domain')
+				return
 		self.update_lp(row, bias, tuple_list)
 		# TODO(steuber): How often should we really be doing this feasibilitiy this?
 		self.check_feasible(overflow,networks)

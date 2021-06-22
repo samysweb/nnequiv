@@ -68,10 +68,10 @@ class LinearOnnxSubnetworkLayer(Freezable):
 
         inputsize = np.prod(shape)
         outputsize = np.prod(self.output_shape)
-        zono = Zonotope(np.zeros((inputsize,), dtype=self.dtype), np.identity(inputsize, dtype=self.dtype))
+        zono = Zonotope(np.zeros((inputsize,)), np.identity(inputsize), dtype=self.dtype)
         self.transform_zono(zono)
-        self.mat = zono.mat_t
-        self.bias = zono.center
+        self.mat = np.array(zono.mat_t,dtype=np.float64)
+        self.bias = np.array(zono.center,dtype=np.float64)
         self.freeze_attrs()
 
     def getMatMul(self, prev_layer_output_shape=None):
