@@ -384,55 +384,42 @@ class Zonotope(Freezable):
         dims = len(self.init_bounds)
 
         assert len(hyperplane_vec) == dims, f"dims in init_bounds is {dims}, hyperplane dims is {len(hyperplane_vec)}"
-        ib = self.init_bounds
+        if self.init_bounds_nparray is None:
+            self.init_bounds_nparray = np.array(self.init_bounds)
+        ib = self.init_bounds_nparray
 
-        sat_corner_list = [ib[d][0] if hyperplane_vec[d] > 0 else ib[d][1] for d in range(dims)]
-        unsat_corner_list = [ib[d][1] if hyperplane_vec[d] > 0 else ib[d][0] for d in range(dims)]
+        sat_corner_list = np.where(hyperplane_vec > 0, ib[:,0], ib[:,1])
+        unsat_corner_list = np.where(hyperplane_vec > 0, ib[:,1], ib[:,0])
 
         assert np.dot(sat_corner_list,hyperplane_vec)<rhs, "contract_domain_new executed on non intersecting hyperspace"
 
         # construct matrix of sat corners
-        sat_corner_matrix = np.array([sat_corner_list] * dims, dtype=self.dtype)
+        sat_corner_matrix = np.tile(sat_corner_list,(dims,1))
 
-        for d in range(dims):
-            sat_corner_matrix[d, d] = unsat_corner_list[d]
+        np.fill_diagonal(sat_corner_matrix, unsat_corner_list)
+
 
         # do it as matrix-vec mult
         dot_res = sat_corner_matrix.dot(hyperplane_vec)
-        
-        for d in range(dims):
-            # make sure it's nonzero
 
-            # todo: test the effect of removing this? division by k... better to keep here
-            if abs(hyperplane_vec[d]) < 1e-6:
-                continue
+        dont_skip_dim = np.nonzero(np.logical_or(hyperplane_vec > 1e-6, hyperplane_vec < -1e-6))[0]
+        updated_dimensions = np.nonzero(dot_res[dont_skip_dim] > rhs)[0]
 
-            #old_sat_corner_d = sat_corner[d]
-            #sat_corner[d] = unsat_corner[d]
-
-            # sat_corner is now potentially unsat
-            #lhs = np.dot(sat_corner, hyperplane_vec)
+        for pos in updated_dimensions:
+            d = int(dont_skip_dim[pos])
             lhs = dot_res[d]
-            
-            if lhs > rhs:
-                # constraint is tighter! find the new bound
-                #sat_corner[d] = 0
-                #tot = np.dot(sat_corner, hyperplane_vec)
-                tot = lhs - unsat_corner_list[d] * hyperplane_vec[d]
+            tot = lhs - unsat_corner_list[d] * hyperplane_vec[d]
 
-                k = hyperplane_vec[d]
-                solved_rhs = (rhs - tot) / k
+            k = hyperplane_vec[d]
+            solved_rhs = (rhs - tot) / k
 
-                if k > 0:
-                    # change ub to solved_rhs
-                    rv.append((d, ib[d][0], solved_rhs))
-                else:
-                    # change lb to solved_rhs
-                    rv.append((d, solved_rhs, ib[d][1]))
+            if k > 0:
+                # change ub to solved_rhs
+                rv.append((d, ib[d][0], solved_rhs))
+            else:
+                # change lb to solved_rhs
+                rv.append((d, solved_rhs, ib[d][1]))
 
-            # restore sat_corner[d]
-            #sat_corner[d] = old_sat_corner_d
-                        
         Timers.toc('contract domain')
 
         return rv
