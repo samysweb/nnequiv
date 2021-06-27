@@ -208,6 +208,8 @@ class ZonoState:
 		self.zono.center[index] = factor * bias
 		dim = self.zono.add_dimension(0.0, new_dim_u)
 		self.zono.mat_t[index, dim] = 1.0
+		lp_col_num = self.lpi.get_num_cols()
+		self.lpi.add_double_bounded_cols([f"i{lp_col_num+1}"], 0.0, new_dim_u)
 		self.overapprox_nodes.append(OverapproxPoint(self.cur_network, self.cur_layer, index, dim))
 		Timers.toc('overapprox')
 
