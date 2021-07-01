@@ -36,4 +36,9 @@ class EquivalenceProperty:
 		return np.dot(vec, mat_row[:vec_size]) + alpha_dev + bias
 
 	def allows_fallback(self, state):
+		"""
+		Returns whether the property has a fallback check or not
+		:param state: ZonoState that is supposed to be checked
+		:return: True if fallback_check is available
+		"""
 		pass

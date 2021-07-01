@@ -14,7 +14,9 @@ from nnequiv.global_state import GLOBAL_STATE
 from nnequiv.refinement import Refinement
 from nnequiv.zono_state import ZonoState
 
-
+"""
+Wrapper object (legacy reasons, might be removed soon)
+"""
 class EnumerationStackElement:
 	def __init__(self, state: ZonoState):
 		self.state = state
@@ -38,7 +40,9 @@ class EnumerationStackElement:
 			Timers.toc('advance_zono')
 			return EnumerationStackElement(new_el)
 
-
+"""
+Class which manages the ZonoState objects and implements the generic check and check validation (is_valid)
+"""
 class StateManager:
 	def __init__(self, init: ZonoState, property: EquivalenceProperty, networks: [NeuralNetwork]):
 		self.enumeration_stack = [EnumerationStackElement(init)]

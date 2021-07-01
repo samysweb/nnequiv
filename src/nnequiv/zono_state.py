@@ -11,6 +11,10 @@ from nnenum.timerutil import Timers
 from nnenum.zonotope import Zonotope
 from nnequiv.global_state import GLOBAL_STATE
 
+"""
+Encapsulates the Split Decision.
+DNC(=DON'T CARE) is used for object comparison
+"""
 class SplitDecision(Enum):
 	BOTH = auto()
 	POS = auto()
@@ -21,25 +25,42 @@ class SplitDecision(Enum):
 			return True
 		else:
 			return self.value==other.value
-
+"""
+Encapsulated a split point (i.e. tracks a ReLU node on which the Zonotope was split)
+"""
 SplitPoint = namedtuple('SplitPoint', ['network', 'layer', 'index', 'decision'])
+"""
+Encapuslates an overapproximation point (i.e. tracks a ReLU node on which Zonotope was overapproximated)
+"""
 OverapproxPoint = namedtuple('OverapproxPoint', ['network','layer','index','coefficient'])
 
+"""
+Manages the bounds for the ZonoState's current Layer
+"""
 class LayerBounds:
 	def __init__(self):
 		self.output_bounds = None
 		self.branching_neurons = None
 
+	"""
+	Resets bounds
+	"""
 	def clear_output_bounds(self):
 		self.output_bounds = None
 		self.branching_neurons = None
 
+	"""
+	Obtain number of remaining splits in current layer
+	"""
 	def remaining_splits(self):
 		if self.branching_neurons is not None:
 			return len(self.branching_neurons)
 		else:
 			return 0
 
+	"""
+	Get next split
+	"""
 	def pop_branch(self):
 		if self.branching_neurons is None or len(self.branching_neurons) <= 0:
 			return None
@@ -47,6 +68,10 @@ class LayerBounds:
 		self.branching_neurons = self.branching_neurons[1:]
 		return rv
 
+	"""
+	Process Layer and store output bounds and branching neurons
+	May start at Neuron other than 0 through start_with
+	"""
 	def process_layer(self, zono, start_with=0):
 		if self.output_bounds is None or start_with!=0:
 			Timers.tic('layer_bounds_process_layer')
@@ -63,12 +88,17 @@ class LayerBounds:
 			Timers.toc('layer_bounds_process_layer')
 			return new_zeros
 
+	"""
+	Copy the Layer Bounds
+	"""
 	def copy(self):
 		rv = LayerBounds()
 		rv.output_bounds = copy.copy(self.output_bounds)
 		rv.branching_neurons = copy.copy(self.branching_neurons)
 
-
+"""
+ZonoState manages a Zonotope (+star set LP) which is propagated through a network
+"""
 class ZonoState:
 	def __init__(self, network_count, state=None, do_branching=None):
 		self.network_count = network_count
@@ -96,6 +126,9 @@ class ZonoState:
 		self.do_branching = do_branching
 		self.overapprox_nodes = []
 
+	"""
+	Used for initialization based on a Zonotope
+	"""
 	def from_init_zono(self, init: Zonotope, set_initial=True):
 		self.zono = init.deep_copy()
 		if set_initial:
@@ -106,6 +139,9 @@ class ZonoState:
 				self.lpi.add_double_bounded_cols([f"i{i}"], lb, ub)
 		self.split_heuristic = TrivialHeuristic(len(init.init_bounds))
 
+	"""
+	Used for initialization based on a ZonoState
+	"""
 	def from_state(self, state):
 		Timers.tic('zono_state_from_state')
 		self.zono = state.zono.deep_copy()
@@ -125,6 +161,9 @@ class ZonoState:
 			self.output_zonos[x] = state.output_zonos[x].deep_copy()
 		Timers.toc('zono_state_from_state')
 
+	"""
+	Splits Zonotope along some dimension (deprecated)
+	"""
 	def split(self):
 		split_dim = self.split_heuristic.get_split()
 		copy_zono = ZonoState(self.network_count,state=self)
@@ -135,6 +174,10 @@ class ZonoState:
 		copy_zono.zono.update_init_bounds(split_dim, (mid,up))
 		return copy_zono, self
 
+	"""
+	Contracts the Zonotope along a hyperplane given by row and bias
+	Updates LP and layer bounds accordingly
+	"""
 	def contract_domain(self, row, bias, index, networks, overflow):
 		Timers.tic('zono_state_contract_domain')
 		tuple_list = self.zono.contract_domain(row,bias)
@@ -152,6 +195,9 @@ class ZonoState:
 		self.set_to_zero(zeros)
 		Timers.toc('zono_state_contract_domain')
 
+	"""
+	Updates LP based on the given row, bias and list of dimension bound changes [(dim, lower, upper)]
+	"""
 	def update_lp(self, row, bias, tuple_list):
 		Timers.tic('zono_state_update_lp')
 		lp_col_num = self.lpi.get_num_cols()
@@ -166,6 +212,11 @@ class ZonoState:
 			self.lpi.set_col_bounds(i, l, u)
 		Timers.toc('zono_state_update_lp')
 
+	"""
+	Decides what action to take for the next split:
+	If instance of SplitPoint is returned, the ZonoState is supposed to be split along that split point
+	If None is returned there is either no split to do or the split was overapproximated
+	"""
 	def split_decision(self, networks):
 		Timers.tic("zono_state_split_decision")
 		index = self.layer_bounds.pop_branch()
@@ -195,7 +246,9 @@ class ZonoState:
 					return None
 
 
-
+	"""
+	Overapproximates the Zonotope for the given index
+	"""
 	def overapproximate(self, index, networks: [NeuralNetwork]):
 		Timers.tic('overapprox')
 		row = self.zono.mat_t[index]
@@ -211,7 +264,10 @@ class ZonoState:
 		self.overapprox_nodes.append(OverapproxPoint(self.cur_network, self.cur_layer, index, dim))
 		Timers.toc('overapprox')
 
-
+	"""
+	Processes the first (i.e. next) ReLU split in the network.
+	Action taken depends on spit_decision
+	"""
 	def do_first_relu_split(self, networks: [NeuralNetwork]):
 		#TODO(steuber): Maybe reorder: Only create child zono if feasible?
 		Timers.tic('do_first_relu_split')
@@ -255,6 +311,9 @@ class ZonoState:
 		Timers.toc('do_first_relu_split')
 		return rv
 
+	"""
+	Propagates the ZonoState through the (linear) layer
+	"""
 	def propagate_layer(self, networks: [NeuralNetwork]):
 		Timers.tic('propagate_layer')
 		network = networks[self.cur_network]
@@ -265,11 +324,18 @@ class ZonoState:
 		Timers.toc('propagate_layer_transform')
 		Timers.toc('propagate_layer')
 
+	"""
+	Updates the ZonoState jumping to the next layer.
+	For this to work there must be no remaining splits in layer_bounds
+	"""
 	def next_layer(self):
 		if self.layer_bounds.remaining_splits() <= 0:
 			self.cur_layer += 1
 			self.layer_bounds.clear_output_bounds()
 
+	"""
+	Propagates the ZonoState up to the next split.
+	"""
 	def propagate_up_to_split(self, networks: [NeuralNetwork]):
 		Timers.tic('propagate_up_to_split')
 		while not self.is_finished(networks):
@@ -288,6 +354,10 @@ class ZonoState:
 				self.next_layer()
 		Timers.toc('propagate_up_to_split')
 
+	"""
+	Sets the given dimension to zero.
+	Used by contract_domain and propagate_up_to_split
+	"""
 	def set_to_zero(self, zeros):
 		Timers.tic('set_to_zero')
 		if zeros is not None:
@@ -295,6 +365,11 @@ class ZonoState:
 			self.zono.center[zeros] = 0.0
 		Timers.toc('set_to_zero')
 
+	"""
+	Checks whether the ZonoState is finished (i.e. ready for equivalence check).
+	If it turns out that ZonoState has reached the end of a network (not the last one),
+	the ZonoState is moved to the next network
+	"""
 	def is_finished(self, networks: [NeuralNetwork]):
 		Timers.tic('is_finished')
 		if not self.active:
@@ -328,6 +403,9 @@ class ZonoState:
 			Timers.toc('is_finished')
 			return False
 
+	"""
+	Getter for the produced output Zonotopes (necessary for equivalence checks)
+	"""
 	def get_output_zonos(self):
 		rv = []
 		dim_count = self.output_zonos[-1].mat_t.shape[1]
@@ -344,6 +422,10 @@ class ZonoState:
 		rv.append(self.output_zonos[-1].deep_copy())
 		return rv
 
+	"""
+	Checks whether the current ZonoState (in particular its LP) is still feasible.
+	If not the method returns False and sets active to False
+	"""
 	def check_feasible(self, overflow, networks):
 		assert self.active
 		Timers.tic('is_feasible')
@@ -358,9 +440,16 @@ class ZonoState:
 			Timers.toc('is_feasible')
 			return True
 
+	"""
+	Checks whether current ZonoState contains Overapproximations that may be refined
+	"""
 	def admits_refinement(self):
 		return len(self.overapprox_nodes)>0
 
+	"""
+	Refines the ZonoState and returns a list of ZonoStates which should be considered instead of the currently
+	overapproximated ZonoState
+	"""
 	def refine(self):
 		#branching_list = self.get_branching_list()
 		#rv = ZonoState(self.network_count, do_branching=branching_list)
@@ -399,7 +488,9 @@ def status_update():
 		f"\rRefined: {GLOBAL_STATE.REFINED} | Refine Limit: {GLOBAL_STATE.REFINE_LIMIT} | Wrong: {GLOBAL_STATE.WRONG} | Right: {GLOBAL_STATE.RIGHT} | Total: {total} | Total Zonos Considered: {total + GLOBAL_STATE.REFINED} | Expected {expected} ({percentage}%)",end="")
 	Timers.toc('status_update')
 
-
+"""
+Deprecated Heuristic for dimensional Zonotope splitting
+"""
 class TrivialHeuristic:
 	def __init__(self, dimension):
 		self.next = 0
