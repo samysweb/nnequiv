@@ -166,5 +166,11 @@ class StateManager:
 				return (False, False)
 		else:
 			# print(f"\n[EQUIV] {data[0]}\n")
+			if Settings.EQUIV_OVERAPPROX_STRAT=="CEGAR":
+				GLOBAL_STATE.REFINE_DEPTH.append(len(el.state.branching))
+				GLOBAL_STATE.REFINE_BRANCHING.append(el.state.branching)
+			if Settings.EQUIV_OVERAPPROX_STRAT=="OPTIMAL":
+				GLOBAL_STATE.REFINE_DEPTH.pop(0)
+				GLOBAL_STATE.REFINE_BRANCHING.pop(0)
 			Timers.toc('StateManager.valid_result')
 			return (True, True)

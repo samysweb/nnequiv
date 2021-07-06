@@ -226,6 +226,14 @@ class ZonoState:
 		if Settings.EQUIV_OVERAPPROX_STRAT == 'DONT':
 			Timers.toc("zono_state_split_decision")
 			return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
+		elif Settings.EQUIV_OVERAPPROX_STRAT == "OPTIMAL":
+			if len(self.branching)<GLOBAL_STATE.REFINE_DEPTH[0]:
+				Timers.toc("zono_state_split_decision")
+				return SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.BOTH)
+			else:
+				self.overapproximate(index, networks)
+				Timers.toc("zono_state_split_decision")
+				return None
 		elif Settings.EQUIV_OVERAPPROX_STRAT == 'CEGAR' or Settings.EQUIV_OVERAPPROX_STRAT == 'SECOND_NET' or Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL:
 			cur_split_point = SplitPoint(self.cur_network, self.cur_layer, index, SplitDecision.DNC)
 			if self.do_branching is not None and cur_split_point <= self.do_branching:
@@ -454,6 +462,9 @@ class ZonoState:
 		#branching_list = self.get_branching_list()
 		#rv = ZonoState(self.network_count, do_branching=branching_list)
 		#rv.from_init_zono(self.initial_zono)
+		if Settings.EQUIV_OVERAPPROX_STRAT=="OPTIMAL":
+			print(self.branching)
+			print(GLOBAL_STATE.REFINE_BRANCHING[0])
 		rv = self.before_overapprox
 		refine_node = self.overapprox_nodes[0]
 		rv.workload = self.workload

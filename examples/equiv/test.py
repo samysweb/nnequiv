@@ -47,37 +47,70 @@ def main():
 	net2File = sys.argv[2]
 	property = sys.argv[3]
 	strategy = sys.argv[5]
-	if strategy not in Settings.EQUIV_STRATEGIES:
+	if strategy not in Settings.EQUIV_STRATEGIES and not strategy == "CEGAR_OPTIMAL":
 		print(f"ERROR: Strategy {strategy} unknown", file=sys.stderr)
 		return
+	elif strategy == "CEGAR_OPTIMAL":
+		Settings.EQUIV_OVERAPPROX_STRAT = "CEGAR"
+		Timers.toc('main_init')
+		main_cegar_optimal(net1File, net2File, property)
 	else:
 		Settings.EQUIV_OVERAPPROX_STRAT = strategy
 		if strategy.startswith("REFINE_UNTIL"):
 			Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL=True
-	Timers.toc('main_init')
+		Timers.toc('main_init')
+		main_normal(net1File, net2File, property)
+	main_time = Timers.toc('main')
+	print(f"\n[MAIN_TIME] {main_time}")
+	print("")
+	Timers.print_stats()
+	print("")
 
+
+def main_normal(net1File, net2File, property):
 	Timers.tic('net_load')
 	network1, network2 = load_networks(net1File, net2File)
 	Timers.toc('net_load')
-
 	Timers.tic('property_create')
 	if sys.argv[4] == "top":
 		equivprop = Top1Equivalence()
 	else:
 		epsilon = float(sys.argv[4])
-		equivprop = EpsilonEquivalence(epsilon, networks=[network1,network2])
+		equivprop = EpsilonEquivalence(epsilon, networks=[network1, network2])
+	Timers.toc('property_create')
+	Timers.tic('generate_box')
+	input = generateBox(network1.get_input_shape(), property)
+	Timers.toc('generate_box')
+	check_equivalence(network1, network2, input, equivprop)
+
+def main_cegar_optimal(net1File, net2File, property):
+	Timers.tic('net_load')
+	network1, network2 = load_networks(net1File, net2File)
+	Timers.toc('net_load')
+	Timers.tic('property_create')
+	if sys.argv[4] == "top":
+		equivprop = Top1Equivalence()
+	else:
+		epsilon = float(sys.argv[4])
+		equivprop = EpsilonEquivalence(epsilon, networks=[network1, network2])
 	Timers.toc('property_create')
 
+	Timers.tic('cegar_run')
 	Timers.tic('generate_box')
-	input = generateBox(network1.get_input_shape(),property)
+	input = generateBox(network1.get_input_shape(), property)
 	Timers.toc('generate_box')
-
 	check_equivalence(network1, network2, input, equivprop)
-	Timers.toc('main')
-	print("")
-	Timers.print_stats()
-	print("")
+	cegar_time = Timers.toc('cegar_run')
+	print(f"\n[CEGAR_TIME] {cegar_time}\n")
 
+	Timers.tic('optimal_run')
+	Settings.EQUIV_OVERAPPROX_STRAT = "OPTIMAL"
+	Timers.tic('generate_box')
+	input = generateBox(network1.get_input_shape(), property)
+	Timers.toc('generate_box')
+	check_equivalence(network1, network2, input, equivprop)
+	optimal_time = Timers.toc('optimal_run')
+	print(f"\n[OPTIMAL_TIME] {optimal_time}\n")
 
 
 if __name__ == "__main__":

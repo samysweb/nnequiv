@@ -75,8 +75,10 @@ class TimerData():
         if self.last_start_time is None:
             raise RuntimeError("Timer stopped without being started: {}".format(self.name))
 
-        self.total_secs += time.perf_counter() - self.last_start_time
+        timediff = time.perf_counter() - self.last_start_time
+        self.total_secs += timediff
         self.last_start_time = None
+        return timediff
 
 class Timers():
     '''
@@ -150,8 +152,9 @@ class Timers():
             assert Timers.stack[-1].name == name, "Out of order toc(). Expected to first stop timer {}".format(
                 Timers.stack[-1].full_name())
 
-            Timers.stack[-1].toc()
+            rv = Timers.stack[-1].toc()
             Timers.stack.pop()
+            return rv
         else:
             assert not Timers.stack, "Timers.enabled was False but Timers.stack non-empty: " + \
                                       f"{[t.name for t in Timers.stack]}"
