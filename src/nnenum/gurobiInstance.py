@@ -61,6 +61,11 @@ class LpInstance:
 
         self.lp = model
 
+    def set_col_bounds(self, col, lb, ub):
+        self.lp.getVars()[col].lb = lb
+        self.lp.getVars()[col].ub = ub
+
+
     def get_num_rows(self):
         return self.lp.getAttr('NumConstrs')
 
