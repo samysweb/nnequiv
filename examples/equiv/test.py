@@ -42,6 +42,8 @@ def main():
 	Settings.TIMING_STATS = True
 	# TODO(steuber): Check out implications of this setting
 	Settings.SPLIT_TOLERANCE = 1e-8
+	Settings.PARALLEL_ROOT_LP = False
+	Settings.NUM_PROCESSES = 1
 
 	net1File = sys.argv[1]
 	net2File = sys.argv[2]
