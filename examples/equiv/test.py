@@ -10,6 +10,7 @@ from nnenum.zonotope import Zonotope
 from nnequiv.equivalence import check_equivalence
 from nnequiv.equivalence_properties import EpsilonEquivalence
 from nnenum.timerutil import Timers
+from nnequiv.equivalence_properties.milptop1 import MilpTop1Equivalence
 from nnequiv.equivalence_properties.top1 import Top1Equivalence
 
 from properties import PROPERTY
@@ -76,6 +77,8 @@ def main_normal(net1File, net2File, property):
 	Timers.tic('property_create')
 	if sys.argv[4] == "top":
 		equivprop = Top1Equivalence()
+	elif sys.argv[4] == "mtop":
+		equivprop = MilpTop1Equivalence()
 	else:
 		epsilon = float(sys.argv[4])
 		equivprop = EpsilonEquivalence(epsilon, networks=[network1, network2])
@@ -92,6 +95,8 @@ def main_cegar_optimal(net1File, net2File, property):
 	Timers.tic('property_create')
 	if sys.argv[4] == "top":
 		equivprop = Top1Equivalence()
+	elif sys.argv[4] == "mtop":
+		equivprop = MilpTop1Equivalence()
 	else:
 		epsilon = float(sys.argv[4])
 		equivprop = EpsilonEquivalence(epsilon, networks=[network1, network2])

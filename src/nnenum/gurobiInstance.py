@@ -2,15 +2,38 @@
 import gurobipy as grb
 import numpy as np
 
+from nnenum.lpinstance import UnsatError
 from nnenum.settings import Settings
 
+gurobienv = grb.Env(empty=True)
+gurobienv.setParam('LogToConsole', 0)
+# Turn off Heuristics
+gurobienv.setParam('Heuristics', 0)
+# Be careful of numerical errors
+gurobienv.setParam('NumericFocus', 3)
+# Scaling Option (apparently sometimes helps)
+gurobienv.setParam('ScaleFlag', 1)
+# Turn off presolve
+gurobienv.setParam('Presolve', 0)
+# Focus on feasible solution
+gurobienv.setParam('MIPFocus', 1)
+# Simplex
+gurobienv.setParam('Method', 0)
+gurobienv.setParam('DegenMoves', 2)
+gurobienv.setParam('SimplexPricing',3)
+
+gurobienv.setParam('GumoryPasses',0)
+gurobienv.setParam("Threads", 1)
+gurobienv.start()
+
+StoreI = 0
 
 class LpInstance:
     lp_time_limit_sec = 15
 
     def __init__(self, other_lpi=None):
         if other_lpi is None:
-            self.lp = grb.Model('model')
+            self.lp = grb.Model('model',env=gurobienv)
         else:
             self.lp = other_lpi.lp.copy()
 
@@ -178,7 +201,7 @@ class LpInstance:
         !!!fail_on_unsat and use_exact are not supported right now!!!
 
         returns None if UNSAT, otherwise the optimization result'''
-
+        global StoreI
         assert not isinstance(self.lp, tuple), 'self.lp was a tuple. Did you call lpi.deserialize()?'
 
         if direction_vec is None:
@@ -188,19 +211,24 @@ class LpInstance:
 
         # if Settings.GLPK_RESET_BEFORE_MINIMIZE:
         #    self.reset_basis()
-
+        if Settings.DO_TUNING:
+            self.lp.tune()
+            for i in range(min(self.lp.tuneResultCount, 1)):
+                self.lp.getTuneResult(i)
+                self.lp.write('mintune' + str(StoreI) + '.prm')
+                StoreI += 1
         if use_exact:
             raise NotImplementedError('Gurobi has no exact simplex method!')
         else:
             self.lp.optimize()
             opt_status = self.lp.getAttr('Status')
 
-            if fail_on_unsat:
-                assert opt_status == grb.GRB.OPTIMAL, f'[Gurobi] Optimization failed with status code {opt_status}!'
-
             if opt_status == grb.GRB.OPTIMAL:
                 sol = np.array(self.lp.getAttr('X'))
             else:
+                if fail_on_unsat:
+                    #assert opt_status == grb.GRB.OPTIMAL, f'[Gurobi] Optimization failed with status code {opt_status}!'
+                    raise UnsatError()
                 sol = None
 
         return sol

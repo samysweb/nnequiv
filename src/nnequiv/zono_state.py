@@ -4,7 +4,7 @@ from enum import Enum, auto
 
 import numpy as np
 
-from nnenum.lpinstance import LpInstance
+from nnenum.gurobiInstance import LpInstance
 from nnenum.network import NeuralNetwork, ReluLayer
 from nnenum.settings import Settings
 from nnenum.timerutil import Timers
