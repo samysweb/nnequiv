@@ -201,13 +201,9 @@ class ZonoState:
 	def update_lp(self, row, bias, tuple_list):
 		Timers.tic('zono_state_update_lp')
 		lp_col_num = self.lpi.get_num_cols()
-		lp_row = row[:lp_col_num]
 		Timers.tic('zono_state_update_lp_alpha_min')
-		alpha_row = row[lp_col_num:]
-		ib = np.array(self.zono.init_bounds, dtype=self.zono.dtype)
-		alpha_min = self.lpi.compute_residual(alpha_row, ib[lp_col_num:])
 		Timers.toc('zono_state_update_lp_alpha_min')
-		self.lpi.add_dense_row(lp_row, bias - alpha_min)
+		self.lpi.add_dense_row(row, bias)
 		for i, l, u in tuple_list:
 			self.lpi.set_col_bounds(i, l, u)
 		Timers.toc('zono_state_update_lp')
@@ -269,6 +265,8 @@ class ZonoState:
 		self.zono.center[index] = factor * bias
 		dim = self.zono.add_dimension(0.0, new_dim_u)
 		self.zono.mat_t[index, dim] = 1.0
+		lp_col_num = self.lpi.get_num_cols()
+		self.lpi.add_double_bounded_cols([f"i{lp_col_num+1}"], 0.0, new_dim_u)
 		self.overapprox_nodes.append(OverapproxPoint(self.cur_network, self.cur_layer, index, dim))
 		Timers.toc('overapprox')
 
