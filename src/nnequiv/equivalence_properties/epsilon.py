@@ -12,7 +12,9 @@ class EpsilonEquivalence(EquivalenceProperty):
 	def __init__(self, epsilon, networks=[]):
 		self.epsilon = epsilon
 
-	def check(self, zono: ZonoState):
+	def check(self, zono: ZonoState, use_exact=False):
+		if use_exact:
+			self.fallback_check(zono, use_exact=use_exact)
 		Timers.tic('check_epsilon')
 		output_zonos = zono.get_output_zonos()
 		mat = output_zonos[0].mat_t - output_zonos[1].mat_t
@@ -51,7 +53,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 			Timers.toc('check_epsilon')
 			return True, (eps, None)
 
-	def fallback_check(self, zono):
+	def fallback_check(self, zono, use_exact=False):
 		Timers.tic('check_epsilon_fallback')
 		input_size = zono.lpi.get_num_cols()
 		output_zonos = zono.get_output_zonos()
@@ -60,7 +62,7 @@ class EpsilonEquivalence(EquivalenceProperty):
 		max_eps = 0.0
 		for i in range(mat.shape[0]):
 			try:
-				min_vec = zono.lpi.minimize(mat[i, :input_size])
+				min_vec = zono.lpi.minimize(mat[i, :input_size], use_exact=use_exact)
 			except UnsatError:
 				Timers.toc('check_epsilon_fallback')
 				raise UnsatError

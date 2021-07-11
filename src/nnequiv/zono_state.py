@@ -72,7 +72,7 @@ class LayerBounds:
 	Process Layer and store output bounds and branching neurons
 	May start at Neuron other than 0 through start_with
 	"""
-	def process_layer(self, zono, start_with=0):
+	def process_layer(self, zono, lpi, start_with=0):
 		if self.output_bounds is None or start_with!=0:
 			Timers.tic('layer_bounds_process_layer')
 			self.output_bounds = zono.box_bounds()
@@ -80,9 +80,22 @@ class LayerBounds:
 			if self.branching_neurons is not None:
 				new_zeros = self.branching_neurons[self.output_bounds[self.branching_neurons,1]<-Settings.SPLIT_TOLERANCE]
 
-			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
+			branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
 		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
-
+			self.branching_neurons = []
+			Timers.tic('lp_processing')
+			lp_size = lpi.get_num_cols()
+			for branch_index in branching_neurons:
+				minVec = lpi.minimize(zono.mat_t[branch_index,:lp_size])
+				minVal = minVec.dot(zono.mat_t[branch_index,:lp_size])
+				maxVec = lpi.minimize(-zono.mat_t[branch_index, :lp_size])
+				maxVal = maxVec.dot(zono.mat_t[branch_index, :lp_size])
+				self.output_bounds[branch_index,0]=minVal+zono.center[branch_index]
+				self.output_bounds[branch_index,1]=maxVal+zono.center[branch_index]
+				if minVal < -zono.center[branch_index] and maxVal > -zono.center[branch_index]:
+					self.branching_neurons.append(branch_index)
+			Timers.toc('lp_processing')
+			self.branching_neurons = np.array(self.branching_neurons)
 			if new_zeros is None:
 				new_zeros = np.nonzero(self.output_bounds[start_with:,1] < -Settings.SPLIT_TOLERANCE)[0]+start_with
 			Timers.toc('layer_bounds_process_layer')
@@ -190,8 +203,7 @@ class ZonoState:
 				return
 		self.update_lp(row, bias, tuple_list)
 		# TODO(steuber): How often should we really be doing this feasibilitiy this?
-		self.check_feasible(overflow,networks)
-		zeros = self.layer_bounds.process_layer(self.zono,start_with=index+1)
+		zeros = self.layer_bounds.process_layer(self.zono, self.lpi, start_with=index+1)
 		self.set_to_zero(zeros)
 		Timers.toc('zono_state_contract_domain')
 
@@ -350,7 +362,7 @@ class ZonoState:
 			network = networks[self.cur_network]
 			layer = network.layers[self.cur_layer]
 			if isinstance(layer, ReluLayer):
-				zeros = self.layer_bounds.process_layer(self.zono)
+				zeros = self.layer_bounds.process_layer(self.zono, self.lpi)
 				self.set_to_zero(zeros)
 
 				if self.layer_bounds.remaining_splits() > 0:
