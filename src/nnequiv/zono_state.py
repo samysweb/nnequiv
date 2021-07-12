@@ -78,26 +78,41 @@ class LayerBounds:
 			self.output_bounds = zono.box_bounds()
 			new_zeros = None
 			if self.branching_neurons is not None:
-				new_zeros = self.branching_neurons[self.output_bounds[self.branching_neurons,1]<-Settings.SPLIT_TOLERANCE]
+				new_zeros = (self.branching_neurons[self.output_bounds[self.branching_neurons,1]<-Settings.SPLIT_TOLERANCE]).tolist()
 
 			branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
 		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
+
+			new_zeros = (np.nonzero(self.output_bounds[start_with:,1] < -Settings.SPLIT_TOLERANCE)[0]+start_with).tolist()
 			self.branching_neurons = []
 			Timers.tic('lp_processing')
 			lp_size = lpi.get_num_cols()
+			# TODO Still need to add alpha min/max calculation!
 			for branch_index in branching_neurons:
+				alpha_row = zono.mat_t[branch_index, lp_size:]
+				ib = np.array(zono.init_bounds, dtype=zono.dtype)
+
+				Timers.tic('alpha_min')
+				alpha_min = lpi.compute_residual(alpha_row, ib[lp_size:])
+				Timers.toc('alpha_min')
+				Timers.tic('alpha_max')
+				alpha_max = lpi.compute_residual(alpha_row, ib[lp_size:], minmax=1)
+				Timers.toc('alpha_max')
+
 				minVec = lpi.minimize(zono.mat_t[branch_index,:lp_size])
-				minVal = minVec.dot(zono.mat_t[branch_index,:lp_size])
+				minVal = minVec.dot(zono.mat_t[branch_index,:lp_size])+alpha_min
 				maxVec = lpi.minimize(-zono.mat_t[branch_index, :lp_size])
-				maxVal = maxVec.dot(zono.mat_t[branch_index, :lp_size])
+				maxVal = maxVec.dot(zono.mat_t[branch_index, :lp_size])+alpha_max
 				self.output_bounds[branch_index,0]=minVal+zono.center[branch_index]
 				self.output_bounds[branch_index,1]=maxVal+zono.center[branch_index]
 				if minVal < -zono.center[branch_index] and maxVal > -zono.center[branch_index]:
 					self.branching_neurons.append(branch_index)
+				elif maxVal < -zono.center[branch_index]:
+					new_zeros.append(branch_index)
+
+
 			Timers.toc('lp_processing')
 			self.branching_neurons = np.array(self.branching_neurons)
-			if new_zeros is None:
-				new_zeros = np.nonzero(self.output_bounds[start_with:,1] < -Settings.SPLIT_TOLERANCE)[0]+start_with
 			Timers.toc('layer_bounds_process_layer')
 			return new_zeros
 
