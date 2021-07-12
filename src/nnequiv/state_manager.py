@@ -105,17 +105,12 @@ class StateManager:
 				else:
 					print("UNSAT, refining and retrying...")
 		if not valid:
-			if not el.state.admits_refinement():
-				print("CONTAINS POINT:")
-				if not el.state.lpi.contains_point(data[1]):
-					print("Ignored LP failure!")
-					#assert False, f"{equiv}, {data}, {valid}, {result}"
-			else:
-				new_zonos = el.state.refine()
-				for z in new_zonos:
-					z.propagate_up_to_split(self.networks)
-					self.push(EnumerationStackElement(z))
-					GLOBAL_STATE.REFINED+=1
+			assert el.state.admits_refinement()
+			new_zonos = el.state.refine()
+			for z in new_zonos:
+				z.propagate_up_to_split(self.networks)
+				self.push(EnumerationStackElement(z))
+				GLOBAL_STATE.REFINED+=1
 			result=True
 		else:
 			GLOBAL_STATE.RIGHT += 1

@@ -72,7 +72,7 @@ class LayerBounds:
 	Process Layer and store output bounds and branching neurons
 	May start at Neuron other than 0 through start_with
 	"""
-	def process_layer(self, zono, lpi, start_with=0):
+	def process_layer(self, zono, start_with=0):
 		if self.output_bounds is None or start_with!=0:
 			Timers.tic('layer_bounds_process_layer')
 			self.output_bounds = zono.box_bounds()
@@ -80,22 +80,8 @@ class LayerBounds:
 			if self.branching_neurons is not None:
 				new_zeros = self.branching_neurons[self.output_bounds[self.branching_neurons,1]<-Settings.SPLIT_TOLERANCE]
 
-			branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
+			self.branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
 		                                                   self.output_bounds[start_with:, 1] > Settings.SPLIT_TOLERANCE))[0]+start_with
-			self.branching_neurons = []
-			Timers.tic('lp_processing')
-			lp_size = lpi.get_num_cols()
-			for branch_index in branching_neurons:
-				minVec = lpi.minimize(zono.mat_t[branch_index,:lp_size])
-				minVal = minVec.dot(zono.mat_t[branch_index,:lp_size])
-				maxVec = lpi.minimize(-zono.mat_t[branch_index, :lp_size])
-				maxVal = maxVec.dot(zono.mat_t[branch_index, :lp_size])
-				self.output_bounds[branch_index,0]=minVal+zono.center[branch_index]
-				self.output_bounds[branch_index,1]=maxVal+zono.center[branch_index]
-				if minVal < -zono.center[branch_index] and maxVal > -zono.center[branch_index]:
-					self.branching_neurons.append(branch_index)
-			Timers.toc('lp_processing')
-			self.branching_neurons = np.array(self.branching_neurons)
 			if new_zeros is None:
 				new_zeros = np.nonzero(self.output_bounds[start_with:,1] < -Settings.SPLIT_TOLERANCE)[0]+start_with
 			Timers.toc('layer_bounds_process_layer')
@@ -203,7 +189,8 @@ class ZonoState:
 				return
 		self.update_lp(row, bias, tuple_list)
 		# TODO(steuber): How often should we really be doing this feasibilitiy this?
-		zeros = self.layer_bounds.process_layer(self.zono, self.lpi, start_with=index+1)
+		self.check_feasible(overflow, networks)
+		zeros = self.layer_bounds.process_layer(self.zono, start_with=index+1)
 		self.set_to_zero(zeros)
 		Timers.toc('zono_state_contract_domain')
 
@@ -261,6 +248,7 @@ class ZonoState:
 					if self.before_overapprox is None:
 						self.before_overapprox = ZonoState(self.network_count, state=self)
 						self.before_overapprox.workload = self.workload
+						self.before_overapprox.made_overapprox=False
 					self.overapproximate(index, networks)
 					Timers.toc("zono_state_split_decision")
 					return None
@@ -271,6 +259,45 @@ class ZonoState:
 	"""
 	def overapproximate(self, index, networks: [NeuralNetwork]):
 		Timers.tic('overapprox')
+		Timers.tic('lp_processing')
+		lp_size = self.lpi.get_num_cols()
+		branch_index = index
+		alpha_row = self.zono.mat_t[branch_index, lp_size:]
+		ib = np.array(self.zono.init_bounds, dtype=self.zono.dtype)
+
+		Timers.tic('alpha_min')
+		alpha_min = self.lpi.compute_residual(alpha_row, ib[lp_size:])
+		Timers.toc('alpha_min')
+		minVec = self.lpi.minimize(self.zono.mat_t[branch_index, :lp_size])
+		minVal = minVec.dot(self.zono.mat_t[branch_index, :lp_size])+alpha_min
+
+		Timers.tic('alpha_min')
+		alpha_max = self.lpi.compute_residual(alpha_row, ib[lp_size:], minmax=1)
+		Timers.toc('alpha_min')
+		maxVec = self.lpi.minimize(-self.zono.mat_t[branch_index, :lp_size])
+		maxVal = maxVec.dot(self.zono.mat_t[branch_index, :lp_size])+alpha_max
+
+		self.layer_bounds.output_bounds[branch_index, 0] = minVal + self.zono.center[branch_index]
+		self.layer_bounds.output_bounds[branch_index, 1] = maxVal + self.zono.center[branch_index]
+		Timers.toc('lp_processing')
+		if minVal > -self.zono.center[branch_index] or maxVal < -self.zono.center[branch_index]:
+			# TODO: skip them!
+			if maxVal < -self.zono.center[branch_index]:
+				self.set_to_zero([branch_index])
+			#self.overapprox_nodes.append(OverapproxPoint(self.cur_network, self.cur_layer, index, None))
+			Timers.tic('recopy')
+			if not self.before_overapprox.made_overapprox:
+				self.before_overapprox.cur_network =self.cur_network
+				self.before_overapprox.cur_layer = self.cur_layer
+				for i in range(self.cur_network):
+					self.before_overapprox.output_zonos[i] = self.output_zonos[i].deep_copy()
+				self.before_overapprox.zono = self.zono.deep_copy()
+				self.before_overapprox.workload = self.workload
+			Timers.toc('recopy')
+			Timers.toc('overapprox')
+			return
+		# NOW we made an overapproximation...
+		self.before_overapprox.made_overapprox = True
 		row = self.zono.mat_t[index]
 		bias = self.zono.center[index]
 		l, u = self.layer_bounds.output_bounds[index]
@@ -362,8 +389,15 @@ class ZonoState:
 			network = networks[self.cur_network]
 			layer = network.layers[self.cur_layer]
 			if isinstance(layer, ReluLayer):
-				zeros = self.layer_bounds.process_layer(self.zono, self.lpi)
+				zeros = self.layer_bounds.process_layer(self.zono)
 				self.set_to_zero(zeros)
+
+				if Settings.EQUIV_OVERAPPROX_STRAT_REFINE_UNTIL and self.do_branching is not None:
+					if self.cur_network < self.do_branching.network\
+							or (self.cur_network == self.do_branching.network and self.cur_layer < self.do_branching.layer):
+						self.layer_bounds.clear_output_bounds()
+						self.next_layer()
+						continue
 
 				if self.layer_bounds.remaining_splits() > 0:
 					break
@@ -478,6 +512,7 @@ class ZonoState:
 			print(self.branching)
 			print(GLOBAL_STATE.REFINE_BRANCHING[0])
 		rv = self.before_overapprox
+		rv.made_overapprox = False
 		refine_node = self.overapprox_nodes[0]
 		rv.workload = self.workload
 		rv.do_branching = SplitPoint(refine_node.network,

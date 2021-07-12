@@ -499,8 +499,8 @@ class LpInstance(Freezable):
 
         Timers.toc('add_dense_row')
 
-    def compute_residual(self, alpha_row, bounds):
-        min_factors = np.where(alpha_row <= 0, bounds[:, 1], bounds[:, 0])
+    def compute_residual(self, alpha_row, bounds, minmax=0):
+        min_factors = np.where(alpha_row <= 0, bounds[:, 1-minmax], bounds[:, minmax])
         alpha_min = min_factors.dot(alpha_row)
         return alpha_min
 
