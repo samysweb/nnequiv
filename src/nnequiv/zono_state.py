@@ -99,7 +99,7 @@ class LayerBounds:
 ZonoState manages a Zonotope (+star set LP) which is propagated through a network
 """
 class ZonoState:
-	def __init__(self, network_count, state=None, do_branching=None):
+	def __init__(self, network_count, state=None, do_branching=None,lpi=None):
 		self.network_count = network_count
 		self.output_zonos = []
 		self.active = True
@@ -108,7 +108,7 @@ class ZonoState:
 			self.output_zonos.append(None)
 
 		if state is not None:
-			self.from_state(state)
+			self.from_state(state,lpi=lpi)
 			return
 		self.zono = None
 		self.cur_network = 0
@@ -141,7 +141,7 @@ class ZonoState:
 	"""
 	Used for initialization based on a ZonoState
 	"""
-	def from_state(self, state):
+	def from_state(self, state, lpi=None):
 		Timers.tic('zono_state_from_state')
 		self.zono = state.zono.deep_copy()
 		self.initial_zono = state.initial_zono.deep_copy()
@@ -149,7 +149,10 @@ class ZonoState:
 		self.cur_layer = state.cur_layer
 		self.layer_bounds = LayerBounds()
 		self.split_heuristic = state.split_heuristic.copy()
-		self.lpi = LpInstance(other_lpi=state.lpi)
+		if lpi is None:
+			self.lpi = LpInstance(other_lpi=state.lpi)
+		else:
+			self.lpi = lpi
 		self.branching = copy.copy(state.branching)
 		self.do_branching = copy.copy(state.do_branching)
 		self.overapprox_nodes = state.overapprox_nodes.copy()
@@ -187,9 +190,8 @@ class ZonoState:
 				GLOBAL_STATE.FINISHED_FRAC += self.workload
 				Timers.toc('zono_state_contract_domain')
 				return
-		self.update_lp(row, bias, tuple_list)
-		# TODO(steuber): How often should we really be doing this feasibilitiy this?
-		self.check_feasible(overflow, networks)
+		for i, l, u in tuple_list:
+			self.lpi.set_col_bounds(i, l, u)
 		zeros = self.layer_bounds.process_layer(self.zono, start_with=index+1)
 		self.set_to_zero(zeros)
 		Timers.toc('zono_state_contract_domain')
@@ -197,18 +199,17 @@ class ZonoState:
 	"""
 	Updates LP based on the given row, bias and list of dimension bound changes [(dim, lower, upper)]
 	"""
-	def update_lp(self, row, bias, tuple_list):
+	def update_lp(self, lpi, row, bias):
 		Timers.tic('zono_state_update_lp')
-		lp_col_num = self.lpi.get_num_cols()
+		lp_col_num = lpi.get_num_cols()
 		lp_row = row[:lp_col_num]
 		Timers.tic('zono_state_update_lp_alpha_min')
 		alpha_row = row[lp_col_num:]
 		ib = np.array(self.zono.init_bounds, dtype=self.zono.dtype)
-		alpha_min = self.lpi.compute_residual(alpha_row, ib[lp_col_num:])
+		alpha_min = lpi.compute_residual(alpha_row, ib[lp_col_num:])
+		assert alpha_min==0
 		Timers.toc('zono_state_update_lp_alpha_min')
-		self.lpi.add_dense_row(lp_row, bias - alpha_min)
-		for i, l, u in tuple_list:
-			self.lpi.set_col_bounds(i, l, u)
+		lpi.add_dense_row(lp_row, bias - alpha_min)
 		Timers.toc('zono_state_update_lp')
 
 	"""
@@ -332,15 +333,32 @@ class ZonoState:
 		bias = self.zono.center[index]
 		pos, neg = None, None
 		rv = None
+		lpPos = LpInstance(other_lpi=self.lpi)
+		lpNeg = LpInstance(other_lpi=self.lpi)
 		if decision == SplitDecision.BOTH:
-			child = ZonoState(self.network_count, state=self)
+			self.update_lp(lpPos,-row, bias)
+			if not lpPos.is_feasible():
+				decision = SplitDecision.NEG
+			self.update_lp(lpNeg,row, -bias)
+			if not lpNeg.is_feasible():
+				assert decision == SplitDecision.BOTH
+				decision = SplitDecision.POS
+		if decision == SplitDecision.BOTH:
+			child = ZonoState(self.network_count, state=self,lpi=lpNeg)
 			pos, neg = self, child
+			del pos.lpi
+			pos.lpi = lpPos
 			rv = neg
 		elif decision == SplitDecision.NEG:
 			pos, neg = None, self
+			del neg.lpi
+			del lpPos
+			neg.lpi = lpNeg
 		elif decision == SplitDecision.POS:
 			pos,neg = self, None
-
+			del pos.lpi
+			del lpNeg
+			pos.lpi = lpPos
 		if pos is not None:
 			pos.contract_domain(-row, bias, index, networks,self.layer_bounds.output_bounds[index,1])
 			pos.branching.append(SplitPoint(split_net, split_layer, index, SplitDecision.POS))
