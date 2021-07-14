@@ -110,6 +110,15 @@ class StateManager:
 				if not el.state.lpi.contains_point(data[1]):
 					print("Ignored LP failure!")
 					#assert False, f"{equiv}, {data}, {valid}, {result}"
+				else:
+					print("Spurious counterexample?")
+					print(data)
+					print(result)
+					input_size = self.networks[0].get_num_inputs()
+					r1 = self.networks[0].execute(data[1][:input_size])
+					r2 = self.networks[1].execute(data[1][:input_size])
+					print(r1)
+					print(r2)
 			else:
 				new_zonos = el.state.refine()
 				for z in new_zonos:
