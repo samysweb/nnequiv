@@ -4,7 +4,7 @@ from enum import Enum, auto
 
 import numpy as np
 
-from nnenum.lpinstance import LpInstance
+from nnenum.lpinstance import LpInstance, UnsatError
 from nnenum.network import NeuralNetwork, ReluLayer
 from nnenum.settings import Settings
 from nnenum.timerutil import Timers
@@ -77,7 +77,7 @@ class LayerBounds:
 			Timers.tic('layer_bounds_process_layer')
 			self.output_bounds = zono.box_bounds()
 			new_zeros = None
-			if self.branching_neurons is not None:
+			if self.branching_neurons is not None and len(self.branching_neurons)>0:
 				new_zeros = (self.branching_neurons[self.output_bounds[self.branching_neurons,1]<-Settings.SPLIT_TOLERANCE]).tolist()
 
 			branching_neurons = np.nonzero(np.logical_and(self.output_bounds[start_with:, 0] < -Settings.SPLIT_TOLERANCE,
@@ -331,10 +331,11 @@ class ZonoState:
 			pos,neg = self, None
 
 		if pos is not None:
-			pos.contract_domain(-row, bias, index, networks,self.layer_bounds.output_bounds[index,1])
+			self.contract_domain_wrapper(bias, index, networks, pos, -row, self.layer_bounds.output_bounds[index, 1])
 			pos.branching.append(SplitPoint(split_net, split_layer, index, SplitDecision.POS))
 		if neg is not None:
-			neg.contract_domain(row, -bias, index, networks,-self.layer_bounds.output_bounds[index,0])
+			self.contract_domain_wrapper(-bias, index, networks, neg, row, -self.layer_bounds.output_bounds[index,0])
+			#neg.contract_domain(row, -bias, index, networks,-self.layer_bounds.output_bounds[index,0])
 			if neg.active:
 				neg.zono.mat_t[index] = 0.0
 				neg.zono.center[index] = 0.0
@@ -346,6 +347,32 @@ class ZonoState:
 
 		Timers.toc('do_first_relu_split')
 		return rv
+
+	def contract_domain_wrapper(self, bias, index, networks, zono_state, row, bounds):
+		try:
+			zono_state.contract_domain(row, bias, index, networks, bounds)
+		except UnsatError:
+			Timers.toc('lp_processing')
+			Timers.toc('layer_bounds_process_layer')
+			Timers.toc('zono_state_contract_domain')
+			print("Potential numerical instability...")
+			zono_state.check_feasible(None, networks)
+			if zono_state.active:
+				try:
+					zono_state.contract_domain(-row, bias, index, networks, bounds)
+				except UnsatError:
+					Timers.toc('lp_processing')
+					Timers.toc('layer_bounds_process_layer')
+					Timers.toc('zono_state_contract_domain')
+					print("WARNING: Will skip apparently feasible element as bounds cannot be found!")
+					print(zono_state.branching)
+					print(zono_state.lpi)
+					zono_state.active = False
+			else:
+				print("Star set apparently infeasible; Skipping...")
+				print(zono_state.branching)
+				print(zono_state.lpi)
+				zono_state.active = False
 
 	"""
 	Propagates the ZonoState through the (linear) layer
@@ -378,7 +405,32 @@ class ZonoState:
 			network = networks[self.cur_network]
 			layer = network.layers[self.cur_layer]
 			if isinstance(layer, ReluLayer):
-				zeros = self.layer_bounds.process_layer(self.zono, self.lpi)
+				try:
+					zeros = self.layer_bounds.process_layer(self.zono, self.lpi)
+				except UnsatError:
+					Timers.toc('lp_processing')
+					Timers.toc('layer_bounds_process_layer')
+					print("Potential numerical instability...")
+					self.check_feasible(None, networks)
+					if self.active:
+						try:
+							zeros = self.layer_bounds.process_layer(self.zono, self.lpi)
+						except UnsatError:
+							Timers.toc('lp_processing')
+							Timers.toc('layer_bounds_process_layer')
+							print("WARNING: Will skip apparently feasible element as bounds cannot be found!")
+							print(self.branching)
+							print(self.lpi)
+							self.active = False
+							Timers.toc('propagate_up_to_split')
+							return
+					else:
+						print("Star set apparently infeasible; Skipping...")
+						print(self.branching)
+						print(self.lpi)
+						self.active = False
+						Timers.toc('propagate_up_to_split')
+						return
 				self.set_to_zero(zeros)
 
 				if self.layer_bounds.remaining_splits() > 0:
