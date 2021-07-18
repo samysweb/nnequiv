@@ -89,8 +89,12 @@ class StateManager:
 			except UnsatError:
 				valid = False
 				if not el.state.admits_refinement():
-					print("UNSAT without possible refinement!",file=sys.stderr)
-					raise UnsatError()
+					print("UNSAT without possible refinement! Skipping",file=sys.stderr)
+					print(el.state.branching)
+					print(el.state.lpi)
+					#raise UnsatError()
+					Timers.toc('StateManager.check')
+					return True
 				else:
 					print("UNSAT, refining and retrying...")
 		if not valid and not el.state.admits_refinement():
