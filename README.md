@@ -19,6 +19,7 @@ where:
 If you are looking for further information on the experimental evaluation of this tool,
 you might be interested in [this repository](https://github.com/samysweb/nnequiv-experiments)
 
-## Further Remarks
-Our work on equivalence verification will hopefully be published in a conference paper at some point in the near future.
-If you want to cite this work in the meantime, please feel free to get in touch.
+## Citation
+If you use this work in your research please:
+- Cite the work by [Stanley Bak on which we base our implementation](https://link.springer.com/chapter/10.1007/978-3-030-53288-8_4)
+- Cite [our work which extends the Geometric Path Enumeration Algorithm to multiple networks](https://ieeexplore.ieee.org/document/9643328)
