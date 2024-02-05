@@ -154,10 +154,10 @@ class StateManager:
 		"""
 		Timers.tic('StateManager.valid_result')
 		if not equiv:
-			# TODO(steuber): Make float types explicit?
-			input_size = self.networks[0].get_num_inputs()
-			r1 = self.networks[0].execute(data[1][:input_size])
-			r2 = self.networks[1].execute(data[1][:input_size])
+			input_size = el.state.initial_zono.mat_t.shape[1]
+			input_val = el.state.initial_zono.mat_t @ data[1][:input_size] + el.state.initial_zono.center
+			r1 = self.networks[0].execute(input_val) #data[1][:input_size])
+			r2 = self.networks[1].execute(input_val) #data[1][:input_size])
 			if not self.property.check_out(r1, r2):
 				print(f"\n[NEQUIV] {data[0]}\n")
 				print(r1)
