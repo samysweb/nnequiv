@@ -1,4 +1,5 @@
 import signal
+import time
 
 from nnenum.network import NeuralNetwork
 from nnenum.settings import Settings
@@ -17,7 +18,7 @@ def make_init_zs(init, networks):
 
 	return zono_state
 
-def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input : Zonotope, equiv):
+def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input : Zonotope, equiv, to=None):
 	if not Settings.TIMING_STATS:
 		Timers.disable()
 
@@ -31,7 +32,7 @@ def check_equivalence(network1 : NeuralNetwork, network2 : NeuralNetwork, input 
 
 	manager = StateManager(init, equiv, networks)
 
-	main_loop(manager)
+	main_loop(manager,to=to)
 
 	Timers.toc('network_equivalence')
 
@@ -51,10 +52,12 @@ class GracefulKiller:
 
 
 
-def main_loop(manager : StateManager):
+def main_loop(manager : StateManager,to=None):
 	counter = 0
 	killer = GracefulKiller()
-	while not manager.done() and not killer.kill_now:
+	start_time = time.time()
+	equivalent=True
+	while not (manager.done() or killer.kill_now):
 		cur_state = manager.pop()
 		if not cur_state.state.active:
 			continue
@@ -63,6 +66,7 @@ def main_loop(manager : StateManager):
 				continue
 			if not manager.check(cur_state):
 				print(f"NETWORKS NOT EQUIVALENT")
+				equivalent=False
 				break
 		else:
 			newStackEl = cur_state.advance_zono(manager.get_networks())
@@ -70,7 +74,14 @@ def main_loop(manager : StateManager):
 				manager.push(newStackEl)
 			if cur_state.state.active:
 				manager.push(cur_state)
+		if (time.time()-start_time) > to:
+			print(f"UNKNOWN")
+			print(f"TIMEOUT")
+			equivalent=False
+			break
 		counter+=1
 		if counter%5000==1:
 			status_update()
+	if equivalent:
+		print(f"NETWORKS EQUIVALENT")
 	status_update()
