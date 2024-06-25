@@ -19,7 +19,7 @@ from nnenum.network import nn_unflatten, nn_flatten
 from nnenum.specification import DisjunctiveSpec
 
 from nnenum.prefilter import LpCanceledException
-from nnenum.agen import AgenState
+#from nnenum.agen import AgenState
 
 class Worker(Freezable):
     'local data for a worker process'
@@ -136,17 +136,17 @@ class Worker(Freezable):
             onnx_path = Settings.ADVERSARIAL_ONNX_PATH
             assert onnx_path is not None
 
-            if self.priv.agen is None:
-                # initialize
-                ep = Settings.ADVERSARIAL_EPSILON
-                im = Settings.ADVERSARIAL_ORIG_IMAGE
-                l = Settings.ADVERSARIAL_ORIG_LABEL
+            # if self.priv.agen is None:
+            #     # initialize
+            #     ep = Settings.ADVERSARIAL_EPSILON
+            #     im = Settings.ADVERSARIAL_ORIG_IMAGE
+            #     l = Settings.ADVERSARIAL_ORIG_LABEL
 
-                Timers.tic("AgenState init")
-                self.priv.agen = AgenState(onnx_path, im, l, ep)
-                Timers.toc("AgenState init")
+            #     Timers.tic("AgenState init")
+            #     self.priv.agen = AgenState(onnx_path, im, l, ep)
+            #     Timers.toc("AgenState init")
 
-            a = self.priv.agen.try_seeded(seed_image)
+            # a = self.priv.agen.try_seeded(seed_image)
 
             if a is not None:
                 aimage, ep = a

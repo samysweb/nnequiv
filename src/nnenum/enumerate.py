@@ -23,7 +23,7 @@ from nnenum.network import NeuralNetwork, nn_flatten
 from nnenum.worker import Worker
 from nnenum.overapprox import try_quick_overapprox
 from nnenum.onnx_network import reinit_onnx_sessions
-from nnenum.agen import try_quick_adversarial
+#from nnenum.agen import try_quick_adversarial
 
 from nnenum.prefilter import LpCanceledException
 
@@ -465,7 +465,7 @@ class PrivateState(Freezable):
 
         self.stars_in_progress = 0
 
-        self.agen = None # adversarial example generator
+        # self.agen = None # adversarial example generator
 
         if Settings.SHUFFLE_TIME is not None:
             self.next_shuffle_step = Settings.SHUFFLE_TIME
@@ -521,43 +521,43 @@ def worker_func(worker_index, shared):
     priv.start_time = shared.start_time
     w = Worker(shared, priv)
 
-    if worker_index == 1 and Settings.ADVERSARIAL_IN_WORKERS and Settings.ADVERSARIAL_ONNX_PATH:
-        # while worker 0 does overapproximation, worker 1
-        priv.agen, aimage = try_quick_adversarial(1)
+    # if worker_index == 1 and Settings.ADVERSARIAL_IN_WORKERS and Settings.ADVERSARIAL_ONNX_PATH:
+    #     # while worker 0 does overapproximation, worker 1
+    #     priv.agen, aimage = try_quick_adversarial(1)
             
-        for i in range(Settings.ADVERSARIAL_WORKERS_MAX_ITER):
+    #     for i in range(Settings.ADVERSARIAL_WORKERS_MAX_ITER):
             
-            if aimage is not None:
-                if Settings.PRINT_OUTPUT:
-                    print(f"mixed_adversarial worker {worker_index} found unsafe image after on iteration {i}")
+    #         if aimage is not None:
+    #             if Settings.PRINT_OUTPUT:
+    #                 print(f"mixed_adversarial worker {worker_index} found unsafe image after on iteration {i}")
 
-                flat_image = nn_flatten(aimage)
+    #             flat_image = nn_flatten(aimage)
 
-                output = w.shared.network.execute(flat_image)
-                flat_output = np.ravel(output)
+    #             output = w.shared.network.execute(flat_image)
+    #             flat_output = np.ravel(output)
 
-                olabel = np.argmax(output)
-                confirmed = olabel != Settings.ADVERSARIAL_ORIG_LABEL
+    #             olabel = np.argmax(output)
+    #             confirmed = olabel != Settings.ADVERSARIAL_ORIG_LABEL
 
-                if Settings.PRINT_OUTPUT:
-                    print(f"Original label: {Settings.ADVERSARIAL_ORIG_LABEL}, output argmax: {olabel}")
-                    print(f"counterexample was confirmed: {confirmed}")
+    #             if Settings.PRINT_OUTPUT:
+    #                 print(f"Original label: {Settings.ADVERSARIAL_ORIG_LABEL}, output argmax: {olabel}")
+    #                 print(f"counterexample was confirmed: {confirmed}")
 
-                if confirmed:
-                    concrete_io_tuple = (flat_image, flat_output)
-                    w.found_unsafe(concrete_io_tuple)
-                    break
+    #             if confirmed:
+    #                 concrete_io_tuple = (flat_image, flat_output)
+    #                 w.found_unsafe(concrete_io_tuple)
+    #                 break
 
-            if shared.should_exit.value != 0:
-                break
+    #         if shared.should_exit.value != 0:
+    #             break
 
-            #if shared.finished_initial_overapprox.value == 1 and worker_index != 1:
-                # worker 1 finishes all attempts, other works help with enumeration
-            #    break
+    #         #if shared.finished_initial_overapprox.value == 1 and worker_index != 1:
+    #             # worker 1 finishes all attempts, other works help with enumeration
+    #         #    break
 
-            # try again using a mixed strategy
-            random_attacks_only = False
-            aimage = priv.agen.try_mixed_adversarial(i, random_attacks_only)
+    #         # try again using a mixed strategy
+    #         random_attacks_only = False
+    #         aimage = priv.agen.try_mixed_adversarial(i, random_attacks_only)
 
     try:
         w.main_loop()
